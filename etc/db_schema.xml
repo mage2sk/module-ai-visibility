@@ -1,0 +1,349 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * Raw tables (pruned by the retention cron):
+ *   - panth_aiv_hit       : one row per AI crawler / bot candidate request
+ *   - panth_aiv_visit     : one row per shopper arriving from an AI assistant
+ *   - panth_aiv_landing   : sampled no-referrer deep landings
+ * Daily tables (rebuilt idempotently per UTC day by the rollup):
+ *   - panth_aiv_crawl_daily, panth_aiv_path_daily, panth_aiv_visit_daily
+ *   - panth_aiv_overflow_daily holds hits above the raw daily cap
+ * Discovery / admin state:
+ *   - panth_aiv_candidate, panth_aiv_rule, panth_aiv_health
+ * Plumbing:
+ *   - panth_aiv_counter, panth_aiv_rate_limit, panth_aiv_import_state
+ * Orders:
+ *   - panth_aiv_order (1:1 with sales_order, removed with the order)
+ *
+ * Every table is utf8mb4 (4-byte characters in paths and User-Agents are stored as sent).
+ * Every datetime is stored in UTC. is_simulated = 1 marks rows written by
+ * panth:aivisibility:simulate so they can be filtered out or purged.
+ */
+-->
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+
+    <table name="panth_aiv_hit" resource="default" engine="innodb" charset="utf8mb4" collation="utf8mb4_general_ci"
+           comment="Panth AI Visibility - raw AI crawler hits">
+        <column xsi:type="bigint" name="hit_id" unsigned="true" nullable="false" identity="true" comment="Hit ID"/>
+        <column xsi:type="datetime" name="created_at" nullable="false" comment="Request time (UTC)"/>
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" default="0" comment="Store view ID"/>
+        <column xsi:type="varchar" name="bot_code" nullable="false" length="64"
+                comment="Catalogue or rule bot code, or cand:ID for a discovery candidate"/>
+        <column xsi:type="varchar" name="category" nullable="false" length="16"
+                comment="training | search | live | other | unknown"/>
+        <column xsi:type="varchar" name="path" nullable="false" length="512" comment="URL path without query"/>
+        <column xsi:type="varchar" name="path_hash" nullable="false" length="40" comment="SHA-1 of path"/>
+        <column xsi:type="boolean" name="has_query" nullable="false" default="false" comment="Request had a query string"/>
+        <column xsi:type="smallint" name="status" unsigned="true" nullable="false" default="0"
+                comment="HTTP status code, 0 when unknown"/>
+        <column xsi:type="int" name="duration_ms" unsigned="true" nullable="false" default="0"
+                comment="Response time in milliseconds"/>
+        <column xsi:type="varchar" name="origin" nullable="false" length="8" default="php" comment="php | log | sim"/>
+        <column xsi:type="boolean" name="verified" nullable="false" default="false"
+                comment="Bot identity verified (reserved)"/>
+        <column xsi:type="boolean" name="is_simulated" nullable="false" default="false" comment="Written by the simulator"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="hit_id"/>
+        </constraint>
+        <index referenceId="PANTH_AIV_HIT_CREATED_AT" indexType="btree">
+            <column name="created_at"/>
+        </index>
+        <index referenceId="PANTH_AIV_HIT_BOT_CODE_CREATED_AT" indexType="btree">
+            <column name="bot_code"/>
+            <column name="created_at"/>
+        </index>
+        <index referenceId="PANTH_AIV_HIT_PATH_HASH_CREATED_AT" indexType="btree">
+            <column name="path_hash"/>
+            <column name="created_at"/>
+        </index>
+        <index referenceId="PANTH_AIV_HIT_STORE_ID_CREATED_AT" indexType="btree">
+            <column name="store_id"/>
+            <column name="created_at"/>
+        </index>
+        <index referenceId="PANTH_AIV_HIT_CATEGORY_CREATED_AT" indexType="btree">
+            <column name="category"/>
+            <column name="created_at"/>
+        </index>
+    </table>
+
+    <table name="panth_aiv_overflow_daily" resource="default" engine="innodb" charset="utf8mb4" collation="utf8mb4_general_ci"
+           comment="Panth AI Visibility - hits above the raw daily cap">
+        <column xsi:type="date" name="day" nullable="false" comment="UTC day"/>
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" default="0" comment="Store view ID"/>
+        <column xsi:type="varchar" name="bot_code" nullable="false" length="64" comment="Bot code"/>
+        <column xsi:type="varchar" name="category" nullable="false" length="16" comment="Bot category"/>
+        <column xsi:type="smallint" name="status_class" unsigned="true" nullable="false" default="0"
+                comment="floor(status / 100): 2, 3, 4, 5, or 0 when unknown"/>
+        <column xsi:type="int" name="hits" unsigned="true" nullable="false" default="0" comment="Hits"/>
+        <column xsi:type="boolean" name="is_simulated" nullable="false" default="false" comment="Written by the simulator"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="day"/>
+            <column name="store_id"/>
+            <column name="bot_code"/>
+            <column name="status_class"/>
+            <column name="is_simulated"/>
+        </constraint>
+    </table>
+
+    <table name="panth_aiv_counter" resource="default" engine="innodb" charset="utf8mb4" collation="utf8mb4_general_ci"
+           comment="Panth AI Visibility - per-day counters (raw hit cap)">
+        <column xsi:type="varchar" name="counter_key" nullable="false" length="64" comment="Counter key"/>
+        <column xsi:type="date" name="day" nullable="false" comment="UTC day"/>
+        <column xsi:type="int" name="value" unsigned="true" nullable="false" default="0" comment="Counter value"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="counter_key"/>
+            <column name="day"/>
+        </constraint>
+    </table>
+
+    <table name="panth_aiv_crawl_daily" resource="default" engine="innodb" charset="utf8mb4" collation="utf8mb4_general_ci"
+           comment="Panth AI Visibility - crawler hits per day, bot and page type">
+        <column xsi:type="date" name="day" nullable="false" comment="UTC day"/>
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" default="0" comment="Store view ID"/>
+        <column xsi:type="varchar" name="bot_code" nullable="false" length="64" comment="Bot code"/>
+        <column xsi:type="varchar" name="category" nullable="false" length="16" comment="Bot category"/>
+        <column xsi:type="varchar" name="page_type" nullable="false" length="16"
+                comment="home | llms | robots | sitemap | search | product | category | cms | other"/>
+        <column xsi:type="int" name="hits" unsigned="true" nullable="false" default="0" comment="Hits"/>
+        <column xsi:type="int" name="s2xx" unsigned="true" nullable="false" default="0" comment="2xx responses"/>
+        <column xsi:type="int" name="s3xx" unsigned="true" nullable="false" default="0" comment="3xx responses"/>
+        <column xsi:type="int" name="s4xx" unsigned="true" nullable="false" default="0" comment="4xx responses"/>
+        <column xsi:type="int" name="s5xx" unsigned="true" nullable="false" default="0" comment="5xx responses"/>
+        <column xsi:type="bigint" name="total_ms" unsigned="true" nullable="false" default="0"
+                comment="Sum of response times in milliseconds"/>
+        <column xsi:type="int" name="max_ms" unsigned="true" nullable="false" default="0"
+                comment="Slowest response in milliseconds"/>
+        <column xsi:type="boolean" name="is_simulated" nullable="false" default="false" comment="Written by the simulator"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="day"/>
+            <column name="store_id"/>
+            <column name="bot_code"/>
+            <column name="page_type"/>
+            <column name="is_simulated"/>
+        </constraint>
+        <index referenceId="PANTH_AIV_CRAWL_DAILY_DAY" indexType="btree">
+            <column name="day"/>
+        </index>
+    </table>
+
+    <table name="panth_aiv_path_daily" resource="default" engine="innodb" charset="utf8mb4" collation="utf8mb4_general_ci"
+           comment="Panth AI Visibility - top crawled paths per day and category">
+        <column xsi:type="date" name="day" nullable="false" comment="UTC day"/>
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" default="0" comment="Store view ID"/>
+        <column xsi:type="varchar" name="category" nullable="false" length="16" comment="Bot category"/>
+        <column xsi:type="varchar" name="path_hash" nullable="false" length="40" comment="SHA-1 of path"/>
+        <column xsi:type="varchar" name="path" nullable="false" length="512" comment="URL path"/>
+        <column xsi:type="varchar" name="entity_type" nullable="true" length="16" comment="product | category | cms"/>
+        <column xsi:type="int" name="entity_id" unsigned="true" nullable="true" comment="Resolved entity ID"/>
+        <column xsi:type="int" name="hits" unsigned="true" nullable="false" default="0" comment="Hits"/>
+        <column xsi:type="boolean" name="is_simulated" nullable="false" default="false" comment="Written by the simulator"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="day"/>
+            <column name="store_id"/>
+            <column name="category"/>
+            <column name="path_hash"/>
+            <column name="is_simulated"/>
+        </constraint>
+        <index referenceId="PANTH_AIV_PATH_DAILY_ENTITY_TYPE_ENTITY_ID_DAY" indexType="btree">
+            <column name="entity_type"/>
+            <column name="entity_id"/>
+            <column name="day"/>
+        </index>
+    </table>
+
+    <table name="panth_aiv_visit" resource="default" engine="innodb" charset="utf8mb4" collation="utf8mb4_general_ci"
+           comment="Panth AI Visibility - raw visits from AI assistants">
+        <column xsi:type="bigint" name="visit_id" unsigned="true" nullable="false" identity="true" comment="Visit ID"/>
+        <column xsi:type="datetime" name="created_at" nullable="false" comment="Visit time (UTC)"/>
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" default="0" comment="Store view ID"/>
+        <column xsi:type="varchar" name="source_code" nullable="false" length="64"
+                comment="Catalogue or rule source code, or cand:ID for a discovery candidate"/>
+        <column xsi:type="varchar" name="medium" nullable="false" length="8" default="referrer" comment="referrer | utm"/>
+        <column xsi:type="varchar" name="referrer_host" nullable="true" length="255" comment="Referrer host name only"/>
+        <column xsi:type="varchar" name="landing_path" nullable="false" length="512" comment="Landing URL path without query"/>
+        <column xsi:type="varchar" name="path_hash" nullable="false" length="40" comment="SHA-1 of landing_path"/>
+        <column xsi:type="boolean" name="is_simulated" nullable="false" default="false" comment="Written by the simulator"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="visit_id"/>
+        </constraint>
+        <index referenceId="PANTH_AIV_VISIT_CREATED_AT" indexType="btree">
+            <column name="created_at"/>
+        </index>
+        <index referenceId="PANTH_AIV_VISIT_PATH_HASH_CREATED_AT" indexType="btree">
+            <column name="path_hash"/>
+            <column name="created_at"/>
+        </index>
+        <index referenceId="PANTH_AIV_VISIT_SOURCE_CODE_CREATED_AT" indexType="btree">
+            <column name="source_code"/>
+            <column name="created_at"/>
+        </index>
+    </table>
+
+    <table name="panth_aiv_visit_daily" resource="default" engine="innodb" charset="utf8mb4" collation="utf8mb4_general_ci"
+           comment="Panth AI Visibility - AI visits per day, source and page type">
+        <column xsi:type="date" name="day" nullable="false" comment="UTC day"/>
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" default="0" comment="Store view ID"/>
+        <column xsi:type="varchar" name="source_code" nullable="false" length="64" comment="Source code"/>
+        <column xsi:type="varchar" name="page_type" nullable="false" length="16" comment="Landing page type"/>
+        <column xsi:type="int" name="visits" unsigned="true" nullable="false" default="0" comment="Visits"/>
+        <column xsi:type="boolean" name="is_simulated" nullable="false" default="false" comment="Written by the simulator"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="day"/>
+            <column name="store_id"/>
+            <column name="source_code"/>
+            <column name="page_type"/>
+            <column name="is_simulated"/>
+        </constraint>
+    </table>
+
+    <table name="panth_aiv_landing" resource="default" engine="innodb" charset="utf8mb4" collation="utf8mb4_general_ci"
+           comment="Panth AI Visibility - sampled direct (no referrer) deep landings">
+        <column xsi:type="bigint" name="landing_id" unsigned="true" nullable="false" identity="true" comment="Landing ID"/>
+        <column xsi:type="datetime" name="created_at" nullable="false" comment="Landing time (UTC)"/>
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" default="0" comment="Store view ID"/>
+        <column xsi:type="varchar" name="path" nullable="false" length="512" comment="Landing URL path without query"/>
+        <column xsi:type="varchar" name="path_hash" nullable="false" length="40" comment="SHA-1 of path"/>
+        <column xsi:type="boolean" name="is_simulated" nullable="false" default="false" comment="Written by the simulator"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="landing_id"/>
+        </constraint>
+        <index referenceId="PANTH_AIV_LANDING_PATH_HASH_CREATED_AT" indexType="btree">
+            <column name="path_hash"/>
+            <column name="created_at"/>
+        </index>
+        <index referenceId="PANTH_AIV_LANDING_CREATED_AT" indexType="btree">
+            <column name="created_at"/>
+        </index>
+    </table>
+
+    <table name="panth_aiv_order" resource="default" engine="innodb" charset="utf8mb4" collation="utf8mb4_general_ci"
+           comment="Panth AI Visibility - AI attribution per order">
+        <column xsi:type="int" name="order_id" unsigned="true" nullable="false" comment="sales_order.entity_id"/>
+        <column xsi:type="varchar" name="channel" nullable="false" length="16" default="referral"
+                comment="referral | probable | webmcp | agent_checkout"/>
+        <column xsi:type="varchar" name="first_source" nullable="false" length="64" comment="First-touch source code"/>
+        <column xsi:type="datetime" name="first_at" nullable="false" comment="First touch (UTC)"/>
+        <column xsi:type="varchar" name="last_source" nullable="false" length="64" comment="Last-touch source code"/>
+        <column xsi:type="datetime" name="last_at" nullable="false" comment="Last touch (UTC)"/>
+        <column xsi:type="varchar" name="landing_path" nullable="true" length="512" comment="Landing path of the last touch"/>
+        <column xsi:type="decimal" name="probability" scale="4" precision="5" unsigned="false" nullable="true"
+                comment="Attribution probability (0-1) for non-referral channels"/>
+        <column xsi:type="datetime" name="created_at" nullable="false" comment="Row created (UTC)"/>
+        <column xsi:type="boolean" name="is_simulated" nullable="false" default="false" comment="Written by the simulator"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="order_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="PANTH_AIV_ORDER_ORDER_ID_SALES_ORDER_ENTITY_ID"
+                    table="panth_aiv_order" column="order_id"
+                    referenceTable="sales_order" referenceColumn="entity_id"
+                    onDelete="CASCADE"/>
+        <index referenceId="PANTH_AIV_ORDER_FIRST_SOURCE" indexType="btree">
+            <column name="first_source"/>
+        </index>
+        <index referenceId="PANTH_AIV_ORDER_LAST_SOURCE" indexType="btree">
+            <column name="last_source"/>
+        </index>
+        <index referenceId="PANTH_AIV_ORDER_CREATED_AT" indexType="btree">
+            <column name="created_at"/>
+        </index>
+    </table>
+
+    <table name="panth_aiv_candidate" resource="default" engine="innodb" charset="utf8mb4" collation="utf8mb4_general_ci"
+           comment="Panth AI Visibility - discovery candidates (unknown bots and sources)">
+        <column xsi:type="int" name="candidate_id" unsigned="true" nullable="false" identity="true" comment="Candidate ID"/>
+        <column xsi:type="varchar" name="type" nullable="false" length="8" comment="bot | source"/>
+        <column xsi:type="varchar" name="key_hash" nullable="false" length="40" comment="SHA-1 of the normalised key"/>
+        <column xsi:type="varchar" name="key_value" nullable="false" length="512"
+                comment="User-Agent, or host:NAME / utm:VALUE for sources"/>
+        <column xsi:type="datetime" name="first_seen" nullable="false" comment="First seen (UTC)"/>
+        <column xsi:type="datetime" name="last_seen" nullable="false" comment="Last seen (UTC)"/>
+        <column xsi:type="int" name="hits" unsigned="true" nullable="false" default="0" comment="Requests or visits"/>
+        <column xsi:type="int" name="llms_fetches" unsigned="true" nullable="false" default="0" comment="Fetches of /llms.txt"/>
+        <column xsi:type="int" name="robots_fetches" unsigned="true" nullable="false" default="0" comment="Fetches of /robots.txt"/>
+        <column xsi:type="int" name="evidence" unsigned="true" nullable="false" default="0"
+                comment="Visits shortly after a live-answer bot fetched the same page"/>
+        <column xsi:type="varchar" name="status" nullable="false" length="16" default="new"
+                comment="new | confirmed | not_ai | ignored"/>
+        <column xsi:type="boolean" name="is_simulated" nullable="false" default="false" comment="Written by the simulator"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="candidate_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="PANTH_AIV_CANDIDATE_TYPE_KEY_HASH">
+            <column name="type"/>
+            <column name="key_hash"/>
+        </constraint>
+        <index referenceId="PANTH_AIV_CANDIDATE_STATUS" indexType="btree">
+            <column name="status"/>
+        </index>
+    </table>
+
+    <table name="panth_aiv_rule" resource="default" engine="innodb" charset="utf8mb4" collation="utf8mb4_general_ci"
+           comment="Panth AI Visibility - bots and sources confirmed in Discovery">
+        <column xsi:type="int" name="rule_id" unsigned="true" nullable="false" identity="true" comment="Rule ID"/>
+        <column xsi:type="varchar" name="type" nullable="false" length="8" comment="bot | source"/>
+        <column xsi:type="varchar" name="code" nullable="false" length="64" comment="Unique code per type"/>
+        <column xsi:type="varchar" name="name" nullable="false" length="128" comment="Display name"/>
+        <column xsi:type="varchar" name="match_on" nullable="false" length="8" comment="ua | host | utm"/>
+        <column xsi:type="varchar" name="pattern" nullable="false" length="512"
+                comment="User-Agent token, host or utm_source value"/>
+        <column xsi:type="varchar" name="category" nullable="true" length="16" comment="Bot category"/>
+        <column xsi:type="varchar" name="company" nullable="true" length="64" comment="Bot operator"/>
+        <column xsi:type="int" name="candidate_id" unsigned="true" nullable="true" comment="Discovery candidate the rule was confirmed from"/>
+        <column xsi:type="datetime" name="created_at" nullable="false" comment="Created (UTC)"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="rule_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="PANTH_AIV_RULE_TYPE_CODE">
+            <column name="type"/>
+            <column name="code"/>
+        </constraint>
+    </table>
+
+    <table name="panth_aiv_health" resource="default" engine="innodb" charset="utf8mb4" collation="utf8mb4_general_ci"
+           comment="Panth AI Visibility - latest data-health check results">
+        <column xsi:type="varchar" name="check_code" nullable="false" length="64" comment="Check code"/>
+        <column xsi:type="varchar" name="status" nullable="false" length="8" comment="ok | warn | error | unknown"/>
+        <column xsi:type="varchar" name="message" nullable="false" length="512" comment="Summary message"/>
+        <column xsi:type="text" name="details" nullable="true" comment="JSON details"/>
+        <column xsi:type="datetime" name="checked_at" nullable="false" comment="Checked (UTC)"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="check_code"/>
+        </constraint>
+    </table>
+
+    <table name="panth_aiv_rate_limit" resource="default" engine="innodb" charset="utf8mb4" collation="utf8mb4_general_ci"
+           comment="Panth AI Visibility - storefront collector rate limit counters">
+        <column xsi:type="varchar" name="bucket" nullable="false" length="96" comment="Counter key and minute"/>
+        <column xsi:type="int" name="hits" unsigned="true" nullable="false" default="0" comment="Requests counted"/>
+        <column xsi:type="int" name="expires_at" unsigned="true" nullable="false" default="0"
+                comment="Unix time after which the row can be deleted"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="bucket"/>
+        </constraint>
+        <index referenceId="PANTH_AIV_RATE_LIMIT_EXPIRES_AT" indexType="btree">
+            <column name="expires_at"/>
+        </index>
+    </table>
+
+    <table name="panth_aiv_import_state" resource="default" engine="innodb" charset="utf8mb4" collation="utf8mb4_general_ci"
+           comment="Panth AI Visibility - access log import position per file">
+        <column xsi:type="varchar" name="file_key" nullable="false" length="40" comment="SHA-1 of the file path"/>
+        <column xsi:type="varchar" name="path" nullable="false" length="1024" comment="Absolute file path"/>
+        <column xsi:type="bigint" name="inode" unsigned="true" nullable="false" default="0" comment="File inode"/>
+        <column xsi:type="bigint" name="byte_offset" unsigned="true" nullable="false" default="0"
+                comment="Byte position already read"/>
+        <column xsi:type="datetime" name="updated_at" nullable="false" comment="Last import run (UTC)"/>
+        <column xsi:type="varchar" name="head_hash" nullable="true" length="40"
+                comment="SHA-1 of the first bytes of the file (detects a file truncated and refilled in place)"/>
+        <column xsi:type="int" name="fail_count" unsigned="true" nullable="false" default="0"
+                comment="Failed attempts on the line at byte_offset"/>
+        <column xsi:type="varchar" name="last_error" nullable="true" length="512" comment="Error of the last run"/>
+        <column xsi:type="datetime" name="last_error_at" nullable="true" comment="Time of the last error (UTC)"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="file_key"/>
+        </constraint>
+    </table>
+</schema>

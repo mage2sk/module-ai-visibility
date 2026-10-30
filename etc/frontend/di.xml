@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * The visit collector (POST /panth_aiv/collect) must not start a PHP session nor renew the
+ * private_content_version cookie: beacons only count a visit.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Framework\Session\SessionStartChecker">
+        <plugin name="panth_aiv_collector_session" type="Panth\AiVisibility\Plugin\CollectorSessionChecker"/>
+    </type>
+    <type name="Magento\Framework\App\PageCache\Version">
+        <plugin name="panth_aiv_collector_content_version" type="Panth\AiVisibility\Plugin\CollectorContentVersion"/>
+    </type>
+</config>

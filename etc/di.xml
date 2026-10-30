@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+
+    <!-- Service contracts. -->
+    <preference for="Panth\AiVisibility\Api\BotClassifierInterface" type="Panth\AiVisibility\Service\BotClassifier"/>
+    <preference for="Panth\AiVisibility\Api\PageTypeResolverInterface" type="Panth\AiVisibility\Service\PageTypeResolver"/>
+    <preference for="Panth\AiVisibility\Api\HitWriterInterface" type="Panth\AiVisibility\Service\HitWriter"/>
+    <preference for="Panth\AiVisibility\Api\SourceClassifierInterface" type="Panth\AiVisibility\Service\SourceClassifier"/>
+    <preference for="Panth\AiVisibility\Api\AttributionCookieInterface" type="Panth\AiVisibility\Service\AttributionCookie"/>
+    <preference for="Panth\AiVisibility\Api\RollupInterface" type="Panth\AiVisibility\Service\Rollup"/>
+    <preference for="Panth\AiVisibility\Api\RelabelerInterface" type="Panth\AiVisibility\Service\Relabeler"/>
+    <preference for="Panth\AiVisibility\Api\HealthRepositoryInterface" type="Panth\AiVisibility\Service\Health\HealthRepository"/>
+
+    <!--
+        TrackRequest runs on every storefront response (including full page
+        cache hits). Human visitors must only pay for the in-memory
+        User-Agent checks, so the database writer is a Proxy and is only
+        constructed when a bot hit is actually recorded.
+    -->
+    <type name="Panth\AiVisibility\Observer\TrackRequest">
+        <arguments>
+            <argument name="hitWriter" xsi:type="object">Panth\AiVisibility\Api\HitWriterInterface\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Panth\AiVisibility\Observer\AttributeOrder">
+        <arguments>
+            <argument name="attributionCookie" xsi:type="object">Panth\AiVisibility\Api\AttributionCookieInterface\Proxy</argument>
+        </arguments>
+    </type>
+
+    <!-- Data-health self-checks, run hourly by cron and on demand from the dashboard. -->
+    <type name="Panth\AiVisibility\Service\Health\HealthRunner">
+        <arguments>
+            <argument name="checks" xsi:type="array">
+                <item name="pageCache" xsi:type="object">Panth\AiVisibility\Service\Health\PageCacheCheck</item>
+                <item name="cron" xsi:type="object">Panth\AiVisibility\Service\Health\CronCheck</item>
+                <item name="collector" xsi:type="object">Panth\AiVisibility\Service\Health\CollectorCheck</item>
+                <item name="consent" xsi:type="object">Panth\AiVisibility\Service\Health\ConsentCheck</item>
+                <item name="tableSize" xsi:type="object">Panth\AiVisibility\Service\Health\TableSizeCheck</item>
+                <item name="logImport" xsi:type="object">Panth\AiVisibility\Service\Health\LogImportCheck</item>
+                <item name="tracking" xsi:type="object">Panth\AiVisibility\Service\Health\TrackingCheck</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!-- Console commands: panth:aivisibility:rollup, panth:aivisibility:import-logs, panth:aivisibility:simulate. -->
+    <type name="Magento\Framework\Console\CommandList">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="panth_aiv_rollup" xsi:type="object">Panth\AiVisibility\Console\Command\RollupCommand</item>
+                <item name="panth_aiv_import_logs" xsi:type="object">Panth\AiVisibility\Console\Command\ImportLogsCommand</item>
+                <item name="panth_aiv_simulate" xsi:type="object">Panth\AiVisibility\Console\Command\SimulateCommand</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!--
+        Commands are constructed on every bin/magento call (also during
+        setup:install / setup:upgrade, before the tables exist), so their
+        heavy services are Proxies.
+    -->
+    <type name="Panth\AiVisibility\Console\Command\RollupCommand">
+        <arguments>
+            <argument name="rollup" xsi:type="object">Panth\AiVisibility\Api\RollupInterface\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Panth\AiVisibility\Console\Command\ImportLogsCommand">
+        <arguments>
+            <argument name="importer" xsi:type="object">Panth\AiVisibility\Service\LogImport\LogImporter\Proxy</argument>
+        </arguments>
+    </type>
+    <!-- The log import rolls up every day it added hits to (the rollup cron only covers today and yesterday). -->
+    <type name="Panth\AiVisibility\Service\LogImport\LogImporter">
+        <arguments>
+            <argument name="rollup" xsi:type="object">Panth\AiVisibility\Api\RollupInterface</argument>
+        </arguments>
+    </type>
+    <type name="Panth\AiVisibility\Cron\Discovery">
+        <arguments>
+            <argument name="candidates" xsi:type="object">Panth\AiVisibility\Service\Discovery\CandidateRepository</argument>
+        </arguments>
+    </type>
+    <type name="Panth\AiVisibility\Console\Command\SimulateCommand">
+        <arguments>
+            <argument name="simulator" xsi:type="object">Panth\AiVisibility\Service\Simulator\Simulator\Proxy</argument>
+        </arguments>
+    </type>
+
+    <!--
+        Admin listing (Crawler Log). Plain table collection without
+        a resource model: SearchResult reads mainTable through ResourceConnection
+        and uses identifierName as the row id.
+    -->
+    <virtualType name="PanthAivHitGridCollection" type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">panth_aiv_hit</argument>
+            <argument name="identifierName" xsi:type="string">hit_id</argument>
+        </arguments>
+    </virtualType>
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="panth_aivisibility_hit_listing_data_source" xsi:type="string">PanthAivHitGridCollection</item>
+            </argument>
+        </arguments>
+    </type>
+</config>

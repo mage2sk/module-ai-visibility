@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * Crawler Log: raw AI crawler hits (panth_aiv_hit). Read-only grid; no full-text
+ * search because the table has no full-text index (use the Path filter instead).
+ */
+-->
+<listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <argument name="data" xsi:type="array">
+        <item name="js_config" xsi:type="array">
+            <item name="provider" xsi:type="string">panth_aivisibility_hit_listing.panth_aivisibility_hit_listing_data_source</item>
+        </item>
+    </argument>
+    <settings>
+        <spinner>panth_aivisibility_hit_columns</spinner>
+        <deps>
+            <dep>panth_aivisibility_hit_listing.panth_aivisibility_hit_listing_data_source</dep>
+        </deps>
+    </settings>
+
+    <dataSource name="panth_aivisibility_hit_listing_data_source" component="Magento_Ui/js/grid/provider">
+        <settings>
+            <storageConfig>
+                <param name="indexField" xsi:type="string">hit_id</param>
+            </storageConfig>
+            <updateUrl path="mui/index/render"/>
+        </settings>
+        <aclResource>Panth_AiVisibility::log</aclResource>
+        <dataProvider class="Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider"
+                      name="panth_aivisibility_hit_listing_data_source">
+            <settings>
+                <requestFieldName>id</requestFieldName>
+                <primaryFieldName>hit_id</primaryFieldName>
+            </settings>
+        </dataProvider>
+    </dataSource>
+
+    <listingToolbar name="listing_top">
+        <settings>
+            <sticky>true</sticky>
+        </settings>
+        <bookmark name="bookmarks"/>
+        <columnsControls name="columns_controls"/>
+        <filters name="listing_filters">
+            <filterSelect name="store_id" provider="${ $.parentName }">
+                <settings>
+                    <options class="Magento\Store\Ui\Component\Listing\Column\Store\Options"/>
+                    <caption translate="true">All Store Views</caption>
+                    <label translate="true">Store View</label>
+                    <dataScope>store_id</dataScope>
+                    <imports>
+                        <link name="visible">ns = ${ $.ns }, index = ${ $.index }:visible</link>
+                    </imports>
+                </settings>
+            </filterSelect>
+        </filters>
+        <exportButton name="export_button"/>
+        <paging name="listing_paging"/>
+    </listingToolbar>
+
+    <columns name="panth_aivisibility_hit_columns">
+        <column name="hit_id">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">ID</label>
+                <visible>false</visible>
+            </settings>
+        </column>
+
+        <column name="created_at" class="Magento\Ui\Component\Listing\Columns\Date"
+                component="Magento_Ui/js/grid/columns/date">
+            <settings>
+                <filter>dateRange</filter>
+                <dataType>date</dataType>
+                <sorting>desc</sorting>
+                <label translate="true">Time</label>
+            </settings>
+        </column>
+
+        <column name="store_id" class="Magento\Store\Ui\Component\Listing\Column\Store">
+            <settings>
+                <label translate="true">Store View</label>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
+                <sortable>false</sortable>
+            </settings>
+        </column>
+
+        <column name="bot_code" class="Panth\AiVisibility\Ui\Component\Listing\Column\BotName">
+            <settings>
+                <options class="Panth\AiVisibility\Ui\Component\Listing\Hit\BotOptions"/>
+                <dataType>select</dataType>
+                <filter>select</filter>
+                <bodyTmpl>ui/grid/cells/html</bodyTmpl>
+                <label translate="true">Bot</label>
+            </settings>
+        </column>
+
+        <column name="category" component="Magento_Ui/js/grid/columns/select">
+            <settings>
+                <options class="Panth\AiVisibility\Ui\Component\Listing\Hit\CategoryOptions"/>
+                <dataType>select</dataType>
+                <filter>select</filter>
+                <label translate="true">Category</label>
+            </settings>
+        </column>
+
+        <column name="path">
+            <settings>
+                <filter>text</filter>
+                <label translate="true">Path</label>
+            </settings>
+        </column>
+
+        <column name="has_query" component="Magento_Ui/js/grid/columns/select">
+            <settings>
+                <options class="Magento\Config\Model\Config\Source\Yesno"/>
+                <dataType>select</dataType>
+                <filter>select</filter>
+                <label translate="true">Had Query String</label>
+                <visible>false</visible>
+            </settings>
+        </column>
+
+        <column name="status">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">HTTP Status</label>
+            </settings>
+        </column>
+
+        <column name="duration_ms">
+            <settings>
+                <filter>textRange</filter>
+                <label translate="true">Time (ms)</label>
+            </settings>
+        </column>
+
+        <column name="origin" component="Magento_Ui/js/grid/columns/select">
+            <settings>
+                <options class="Panth\AiVisibility\Ui\Component\Listing\Hit\OriginOptions"/>
+                <dataType>select</dataType>
+                <filter>select</filter>
+                <label translate="true">Origin</label>
+            </settings>
+        </column>
+
+        <column name="verified" component="Magento_Ui/js/grid/columns/select">
+            <settings>
+                <options class="Magento\Config\Model\Config\Source\Yesno"/>
+                <dataType>select</dataType>
+                <filter>select</filter>
+                <label translate="true">Verified</label>
+                <visible>false</visible>
+            </settings>
+        </column>
+
+        <column name="is_simulated" component="Magento_Ui/js/grid/columns/select">
+            <settings>
+                <options class="Magento\Config\Model\Config\Source\Yesno"/>
+                <dataType>select</dataType>
+                <filter>select</filter>
+                <label translate="true">Simulated</label>
+            </settings>
+        </column>
+    </columns>
+</listing>

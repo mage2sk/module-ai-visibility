@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * AI attribution section in the "Information" tab of the admin order view,
+ * placed in Magento_Sales' order_additional_info container (rendered by
+ * order/view/tab/info.phtml below the payment and shipping sections).
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="order_additional_info">
+            <block class="Panth\AiVisibility\Block\Adminhtml\Order\View\Attribution"
+                   name="panth_aiv.order.attribution"
+                   template="Panth_AiVisibility::order/view/attribution.phtml"
+                   after="-"/>
+        </referenceContainer>
+    </body>
+</page>

@@ -1,0 +1,251 @@
+{
+    "panth_aiv_hit": {
+        "column": {
+            "hit_id": true,
+            "created_at": true,
+            "store_id": true,
+            "bot_code": true,
+            "category": true,
+            "path": true,
+            "path_hash": true,
+            "has_query": true,
+            "status": true,
+            "duration_ms": true,
+            "origin": true,
+            "verified": true,
+            "is_simulated": true
+        },
+        "index": {
+            "PANTH_AIV_HIT_CREATED_AT": true,
+            "PANTH_AIV_HIT_BOT_CODE_CREATED_AT": true,
+            "PANTH_AIV_HIT_PATH_HASH_CREATED_AT": true,
+            "PANTH_AIV_HIT_STORE_ID_CREATED_AT": true,
+            "PANTH_AIV_HIT_CATEGORY_CREATED_AT": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "panth_aiv_overflow_daily": {
+        "column": {
+            "day": true,
+            "store_id": true,
+            "bot_code": true,
+            "category": true,
+            "status_class": true,
+            "hits": true,
+            "is_simulated": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "panth_aiv_counter": {
+        "column": {
+            "counter_key": true,
+            "day": true,
+            "value": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "panth_aiv_crawl_daily": {
+        "column": {
+            "day": true,
+            "store_id": true,
+            "bot_code": true,
+            "category": true,
+            "page_type": true,
+            "hits": true,
+            "s2xx": true,
+            "s3xx": true,
+            "s4xx": true,
+            "s5xx": true,
+            "total_ms": true,
+            "max_ms": true,
+            "is_simulated": true
+        },
+        "index": {
+            "PANTH_AIV_CRAWL_DAILY_DAY": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "panth_aiv_path_daily": {
+        "column": {
+            "day": true,
+            "store_id": true,
+            "category": true,
+            "path_hash": true,
+            "path": true,
+            "entity_type": true,
+            "entity_id": true,
+            "hits": true,
+            "is_simulated": true
+        },
+        "index": {
+            "PANTH_AIV_PATH_DAILY_ENTITY_TYPE_ENTITY_ID_DAY": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "panth_aiv_visit": {
+        "column": {
+            "visit_id": true,
+            "created_at": true,
+            "store_id": true,
+            "source_code": true,
+            "medium": true,
+            "referrer_host": true,
+            "landing_path": true,
+            "path_hash": true,
+            "is_simulated": true
+        },
+        "index": {
+            "PANTH_AIV_VISIT_CREATED_AT": true,
+            "PANTH_AIV_VISIT_PATH_HASH_CREATED_AT": true,
+            "PANTH_AIV_VISIT_SOURCE_CODE_CREATED_AT": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "panth_aiv_visit_daily": {
+        "column": {
+            "day": true,
+            "store_id": true,
+            "source_code": true,
+            "page_type": true,
+            "visits": true,
+            "is_simulated": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "panth_aiv_landing": {
+        "column": {
+            "landing_id": true,
+            "created_at": true,
+            "store_id": true,
+            "path": true,
+            "path_hash": true,
+            "is_simulated": true
+        },
+        "index": {
+            "PANTH_AIV_LANDING_PATH_HASH_CREATED_AT": true,
+            "PANTH_AIV_LANDING_CREATED_AT": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "panth_aiv_order": {
+        "column": {
+            "order_id": true,
+            "channel": true,
+            "first_source": true,
+            "first_at": true,
+            "last_source": true,
+            "last_at": true,
+            "landing_path": true,
+            "probability": true,
+            "created_at": true,
+            "is_simulated": true
+        },
+        "index": {
+            "PANTH_AIV_ORDER_FIRST_SOURCE": true,
+            "PANTH_AIV_ORDER_LAST_SOURCE": true,
+            "PANTH_AIV_ORDER_CREATED_AT": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "PANTH_AIV_ORDER_ORDER_ID_SALES_ORDER_ENTITY_ID": true
+        }
+    },
+    "panth_aiv_candidate": {
+        "column": {
+            "candidate_id": true,
+            "type": true,
+            "key_hash": true,
+            "key_value": true,
+            "first_seen": true,
+            "last_seen": true,
+            "hits": true,
+            "llms_fetches": true,
+            "robots_fetches": true,
+            "evidence": true,
+            "status": true,
+            "is_simulated": true
+        },
+        "index": {
+            "PANTH_AIV_CANDIDATE_STATUS": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "PANTH_AIV_CANDIDATE_TYPE_KEY_HASH": true
+        }
+    },
+    "panth_aiv_rule": {
+        "column": {
+            "rule_id": true,
+            "type": true,
+            "code": true,
+            "name": true,
+            "match_on": true,
+            "pattern": true,
+            "category": true,
+            "company": true,
+            "candidate_id": true,
+            "created_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "PANTH_AIV_RULE_TYPE_CODE": true
+        }
+    },
+    "panth_aiv_health": {
+        "column": {
+            "check_code": true,
+            "status": true,
+            "message": true,
+            "details": true,
+            "checked_at": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "panth_aiv_rate_limit": {
+        "column": {
+            "bucket": true,
+            "hits": true,
+            "expires_at": true
+        },
+        "index": {
+            "PANTH_AIV_RATE_LIMIT_EXPIRES_AT": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    },
+    "panth_aiv_import_state": {
+        "column": {
+            "file_key": true,
+            "path": true,
+            "inode": true,
+            "byte_offset": true,
+            "updated_at": true,
+            "head_hash": true,
+            "fail_count": true,
+            "last_error": true,
+            "last_error_at": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
+    }
+}

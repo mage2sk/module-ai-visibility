@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
+    <group id="default">
+        <!-- Recompute the daily summary rows for today and yesterday (UTC). Idempotent. -->
+        <job name="panth_aiv_rollup" instance="Panth\AiVisibility\Cron\Rollup" method="execute">
+            <schedule>*/30 * * * *</schedule>
+        </job>
+        <!-- Roll up any day that was never summarised, then prune raw and daily rows per the retention settings. -->
+        <job name="panth_aiv_retention" instance="Panth\AiVisibility\Cron\Retention" method="execute">
+            <schedule>10 3 * * *</schedule>
+        </job>
+        <!-- Score new AI referrer source candidates against recent live-answer bot fetches. -->
+        <job name="panth_aiv_discovery" instance="Panth\AiVisibility\Cron\Discovery" method="execute">
+            <schedule>25 * * * *</schedule>
+        </job>
+        <!-- Run the data-health self-checks shown on the dashboard. -->
+        <job name="panth_aiv_health" instance="Panth\AiVisibility\Cron\Health" method="execute">
+            <schedule>40 * * * *</schedule>
+        </job>
+        <!-- Read new access log lines for Varnish / CDN stores. No-op unless Access Log Import is enabled. -->
+        <job name="panth_aiv_import_logs" instance="Panth\AiVisibility\Cron\ImportLogs" method="execute">
+            <schedule>*/5 * * * *</schedule>
+        </job>
+    </group>
+</config>

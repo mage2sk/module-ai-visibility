@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * Global events. AttributeOrder copies the signed attribution cookie onto
+ * the new order(s); it skips the adminhtml area itself and never throws.
+ * checkout_submit_all_after carries the orders of a multishipping checkout
+ * ("orders"); for the one-page checkout ("order") the observer does nothing.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="sales_model_service_quote_submit_success">
+        <observer name="panth_aiv_attribute_order" instance="Panth\AiVisibility\Observer\AttributeOrder"/>
+    </event>
+    <event name="checkout_submit_all_after">
+        <observer name="panth_aiv_attribute_order" instance="Panth\AiVisibility\Observer\AttributeOrder"/>
+    </event>
+</config>

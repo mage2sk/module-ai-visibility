@@ -1,0 +1,13 @@
+Panth Commercial License
+
+Copyright (c) 2026 Kishan Savaliya. All rights reserved.
+
+Use of this software is governed by the LICENSE.txt file distributed
+with the source code. Panth_AiVisibility is a commercial
+extension sold exclusively through the Adobe Commerce Marketplace.
+A valid purchase is required to install and use it.
+
+For all licensing, support, and general questions, please contact:
+    Email:    kishansavaliyakb@gmail.com
+    Website:  https://kishansavaliya.com
+    WhatsApp: +91 84012 70422

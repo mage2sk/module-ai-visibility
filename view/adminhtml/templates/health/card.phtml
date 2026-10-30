@@ -1,0 +1,55 @@
+<?php
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ */
+declare(strict_types=1);
+
+/** @var \Panth\AiVisibility\Block\Adminhtml\HealthCard $block */
+/** @var \Magento\Framework\Escaper $escaper */
+$results = $block->getResults();
+?>
+<section class="panth-aiv-health admin__page-section" id="panth-aiv-health">
+    <div class="admin__page-section-title">
+        <strong class="title"><?= $escaper->escapeHtml(__('Data health')) ?></strong>
+    </div>
+    <?php if ($results === []): ?>
+        <div class="message message-notice notice">
+            <div><?= $escaper->escapeHtml(
+                __('The health checks have not run yet. They run every hour by cron, or click "Run checks now".')
+            ) ?></div>
+        </div>
+    <?php else: ?>
+        <table class="admin__table-secondary panth-aiv-health__table">
+            <tbody>
+            <?php foreach ($results as $row):
+                $status = (string)$row['status'];
+                ?>
+                <tr class="panth-aiv-health__row panth-aiv-health__row--<?= $escaper->escapeHtmlAttr($status) ?>">
+                    <th scope="row"><?= $escaper->escapeHtml((string)$row['label']) ?></th>
+                    <td>
+                        <div class="message <?= $escaper->escapeHtmlAttr($block->getMessageClass($status)) ?>">
+                            <div>
+                                <strong><?= $escaper->escapeHtml($block->getStatusLabel($status)) ?>:</strong>
+                                <?= $escaper->escapeHtml((string)$row['message']) ?>
+                            </div>
+                        </div>
+                        <?php if ((string)$row['checked_at'] !== ''): ?>
+                            <small><?= $escaper->escapeHtml(
+                                __('Checked %1', $block->formatCheckedAt((string)$row['checked_at']))
+                            ) ?></small>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
+    <?php if ($block->canRun()): ?>
+        <form method="post" action="<?= $escaper->escapeUrl($block->getRunUrl()) ?>" class="panth-aiv-health__run">
+            <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($block->getFormKey()) ?>"/>
+            <button type="submit" class="action-default">
+                <span><?= $escaper->escapeHtml(__('Run checks now')) ?></span>
+            </button>
+        </form>
+    <?php endif; ?>
+</section>

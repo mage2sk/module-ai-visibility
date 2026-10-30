@@ -1,0 +1,291 @@
+<?php
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ */
+declare(strict_types=1);
+
+use Panth\AiVisibility\Service\Discovery\CandidateRepository;
+
+/** @var \Panth\AiVisibility\Block\Adminhtml\Discovery $block */
+/** @var \Magento\Framework\Escaper $escaper */
+$current = $block->getCurrentStatus();
+$isNew = $current === CandidateRepository::STATUS_NEW;
+$counts = $block->getCounts();
+$listLimit = \Panth\AiVisibility\Block\Adminhtml\Discovery::LIST_LIMIT;
+$candidates = $block->getCandidates();
+$rules = $block->getRules();
+$formKey = $block->getFormKey();
+$classifyUrl = $block->getClassifyUrl();
+$categories = $block->getCategoryOptions();
+?>
+<div class="panth-aiv-discovery">
+    <p><?= $escaper->escapeHtml(__(
+        'Discovery lists bots and referrer apps that look like AI but are not known yet. Confirm the real ones: '
+        . 'their earlier traffic is moved onto them and they are counted on the dashboard from now on. '
+        . 'Mark the rest as Not AI or Ignore them.'
+    )) ?></p>
+
+    <?php if (!$block->isDiscoveryEnabled()): ?>
+        <div class="message message-warning warning">
+            <div>
+                <?= $escaper->escapeHtml(__('Discovery is switched off, so no new candidates are collected.')) ?>
+                <a href="<?= $escaper->escapeUrl($block->getConfigUrl()) ?>"><?= $escaper->escapeHtml(
+                    __('Turn on "Discover Unknown AI Bots and Apps" in the configuration.')
+                ) ?></a>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <ul class="panth-aiv-discovery__tabs" role="tablist">
+        <?php foreach ($block->getTabStatuses() as $status): ?>
+            <li class="panth-aiv-discovery__tab<?= $status === $current ? ' _active' : '' ?>">
+                <?php if ($status === $current): ?>
+                    <strong><?= $escaper->escapeHtml($block->getStatusLabel($status)) ?>
+                        (<?= (int)($counts[$status] ?? 0) ?>)</strong>
+                <?php else: ?>
+                    <a href="<?= $escaper->escapeUrl($block->getTabUrl($status)) ?>"><?= $escaper->escapeHtml(
+                        $block->getStatusLabel($status)
+                    ) ?> (<?= (int)($counts[$status] ?? 0) ?>)</a>
+                <?php endif; ?>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+    <?php if ((int)($counts[$current] ?? 0) > $listLimit): ?>
+        <p class="panth-aiv-discovery__limit"><?= $escaper->escapeHtml(__(
+            'Showing the %1 most active of %2 candidates in this list. Candidates that are not confirmed are '
+            . 'removed automatically when they were not seen for 90 days.',
+            $listLimit,
+            (int)$counts[$current]
+        )) ?></p>
+    <?php endif; ?>
+
+    <div class="admin__page-section">
+        <div class="admin__page-section-title">
+            <strong class="title"><?= $escaper->escapeHtml(__('Unknown bots')) ?></strong>
+        </div>
+        <?php if ($candidates['bot'] === []): ?>
+            <p><?= $escaper->escapeHtml(__('No bot candidates in this list.')) ?></p>
+        <?php else: ?>
+            <table class="data-grid panth-aiv-discovery__table">
+                <thead>
+                <tr>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('User-Agent')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Requests')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('llms.txt / robots.txt')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('First / last seen')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Decision')) ?></th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($candidates['bot'] as $row):
+                    $id = (int)$row['candidate_id'];
+                    ?>
+                    <tr>
+                        <td>
+                            <code><?= $escaper->escapeHtml((string)$row['key_value']) ?></code>
+                            <?php if ((int)($row['is_simulated'] ?? 0) === 1): ?>
+                                <br/><em><?= $escaper->escapeHtml(__('Simulated test data')) ?></em>
+                            <?php endif; ?>
+                        </td>
+                        <td><?= (int)$row['hits'] ?></td>
+                        <td><?= (int)$row['llms_fetches'] ?> / <?= (int)$row['robots_fetches'] ?></td>
+                        <td>
+                            <?= $escaper->escapeHtml($block->formatUtcDate((string)$row['first_seen'])) ?><br/>
+                            <?= $escaper->escapeHtml($block->formatUtcDate((string)$row['last_seen'])) ?>
+                        </td>
+                        <td>
+                            <form method="post" action="<?= $escaper->escapeUrl($classifyUrl) ?>">
+                                <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>"/>
+                                <input type="hidden" name="candidate_id" value="<?= (int)$id ?>"/>
+                                <input type="hidden" name="return_status"
+                                       value="<?= $escaper->escapeHtmlAttr($current) ?>"/>
+                                <?php if ($isNew): ?>
+                                    <div class="admin__field">
+                                        <label class="admin__field-label" for="aiv-name-<?= (int)$id ?>">
+                                            <span><?= $escaper->escapeHtml(__('Name')) ?></span>
+                                        </label>
+                                        <input class="admin__control-text" type="text" id="aiv-name-<?= (int)$id ?>"
+                                               name="name" maxlength="128" required="required"
+                                               value="<?= $escaper->escapeHtmlAttr($block->getSuggestedName($row)) ?>"/>
+                                    </div>
+                                    <div class="admin__field">
+                                        <label class="admin__field-label" for="aiv-token-<?= (int)$id ?>">
+                                            <span><?= $escaper->escapeHtml(__('User-Agent token')) ?></span>
+                                        </label>
+                                        <input class="admin__control-text" type="text" id="aiv-token-<?= (int)$id ?>"
+                                               name="token" maxlength="128"
+                                               value="<?= $escaper->escapeHtmlAttr($block->getSuggestedToken($row)) ?>"/>
+                                    </div>
+                                    <div class="admin__field">
+                                        <label class="admin__field-label" for="aiv-company-<?= (int)$id ?>">
+                                            <span><?= $escaper->escapeHtml(__('Company (optional)')) ?></span>
+                                        </label>
+                                        <input class="admin__control-text" type="text" id="aiv-company-<?= (int)$id ?>"
+                                               name="company" maxlength="64" value=""/>
+                                    </div>
+                                    <div class="panth-aiv-discovery__actions">
+                                        <?php foreach ($categories as $value => $label): ?>
+                                            <button type="submit" name="decision" class="action-secondary"
+                                                    value="<?= $escaper->escapeHtmlAttr($value) ?>"
+                                                    title="<?= $escaper->escapeHtmlAttr($label) ?>">
+                                                <span><?= $escaper->escapeHtml(
+                                                    __('Confirm: %1', $block->getCategoryButtonLabel($value))
+                                                ) ?></span>
+                                            </button>
+                                        <?php endforeach; ?>
+                                        <button type="submit" name="decision" value="not_ai" class="action-default"
+                                                formnovalidate="formnovalidate">
+                                            <span><?= $escaper->escapeHtml(__('Not AI')) ?></span>
+                                        </button>
+                                        <button type="submit" name="decision" value="ignored" class="action-default"
+                                                formnovalidate="formnovalidate">
+                                            <span><?= $escaper->escapeHtml(__('Ignore')) ?></span>
+                                        </button>
+                                    </div>
+                                <?php else: ?>
+                                    <button type="submit" name="decision" value="restore" class="action-default">
+                                        <span><?= $escaper->escapeHtml(__('Move back to New')) ?></span>
+                                    </button>
+                                <?php endif; ?>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </div>
+
+    <div class="admin__page-section">
+        <div class="admin__page-section-title">
+            <strong class="title"><?= $escaper->escapeHtml(__('Unknown referrer apps and utm_source values')) ?></strong>
+        </div>
+        <?php if ($candidates['source'] === []): ?>
+            <p><?= $escaper->escapeHtml(__('No source candidates in this list.')) ?></p>
+        <?php else: ?>
+            <table class="data-grid panth-aiv-discovery__table">
+                <thead>
+                <tr>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Source')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Visits')) ?></th>
+                    <th class="data-grid-th" title="<?= $escaper->escapeHtmlAttr(
+                        __('Visits in the last 7 days that came minutes after a live-answer AI bot fetched the same page')
+                    ) ?>"><?= $escaper->escapeHtml(__('AI evidence')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('First / last seen')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Decision')) ?></th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($candidates['source'] as $row):
+                    $id = (int)$row['candidate_id'];
+                    [$kind, $value] = $block->getSourceParts($row);
+                    ?>
+                    <tr>
+                        <td>
+                            <?= $escaper->escapeHtml($kind) ?>: <code><?= $escaper->escapeHtml($value) ?></code>
+                            <?php if ((int)($row['is_simulated'] ?? 0) === 1): ?>
+                                <br/><em><?= $escaper->escapeHtml(__('Simulated test data')) ?></em>
+                            <?php endif; ?>
+                        </td>
+                        <td><?= (int)$row['hits'] ?></td>
+                        <td><?= (int)$row['evidence'] ?></td>
+                        <td>
+                            <?= $escaper->escapeHtml($block->formatUtcDate((string)$row['first_seen'])) ?><br/>
+                            <?= $escaper->escapeHtml($block->formatUtcDate((string)$row['last_seen'])) ?>
+                        </td>
+                        <td>
+                            <form method="post" action="<?= $escaper->escapeUrl($classifyUrl) ?>">
+                                <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>"/>
+                                <input type="hidden" name="candidate_id" value="<?= (int)$id ?>"/>
+                                <input type="hidden" name="return_status"
+                                       value="<?= $escaper->escapeHtmlAttr($current) ?>"/>
+                                <?php if ($isNew): ?>
+                                    <div class="admin__field">
+                                        <label class="admin__field-label" for="aiv-sname-<?= (int)$id ?>">
+                                            <span><?= $escaper->escapeHtml(__('Name')) ?></span>
+                                        </label>
+                                        <input class="admin__control-text" type="text" id="aiv-sname-<?= (int)$id ?>"
+                                               name="name" maxlength="128" required="required"
+                                               value="<?= $escaper->escapeHtmlAttr($block->getSuggestedName($row)) ?>"/>
+                                    </div>
+                                    <div class="panth-aiv-discovery__actions">
+                                        <button type="submit" name="decision" value="confirm" class="action-secondary">
+                                            <span><?= $escaper->escapeHtml(__('Confirm as AI source')) ?></span>
+                                        </button>
+                                        <button type="submit" name="decision" value="not_ai" class="action-default"
+                                                formnovalidate="formnovalidate">
+                                            <span><?= $escaper->escapeHtml(__('Not AI')) ?></span>
+                                        </button>
+                                        <button type="submit" name="decision" value="ignored" class="action-default"
+                                                formnovalidate="formnovalidate">
+                                            <span><?= $escaper->escapeHtml(__('Ignore')) ?></span>
+                                        </button>
+                                    </div>
+                                <?php else: ?>
+                                    <button type="submit" name="decision" value="restore" class="action-default">
+                                        <span><?= $escaper->escapeHtml(__('Move back to New')) ?></span>
+                                    </button>
+                                <?php endif; ?>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </div>
+
+    <div class="admin__page-section">
+        <div class="admin__page-section-title">
+            <strong class="title"><?= $escaper->escapeHtml(__('Confirmed')) ?></strong>
+        </div>
+        <?php if ($rules['bot'] === [] && $rules['source'] === []): ?>
+            <p><?= $escaper->escapeHtml(__('Nothing confirmed yet.')) ?></p>
+        <?php else: ?>
+            <table class="data-grid panth-aiv-discovery__table">
+                <thead>
+                <tr>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Type')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Name')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Code')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Matches')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Category')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Confirmed on')) ?></th>
+                    <th class="data-grid-th"><?= $escaper->escapeHtml(__('Action')) ?></th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php foreach (array_merge($rules['bot'], $rules['source']) as $rule): ?>
+                    <tr>
+                        <td><?= $escaper->escapeHtml(
+                            $rule['type'] === 'bot' ? __('AI bot') : __('AI source')
+                        ) ?></td>
+                        <td>
+                            <?= $escaper->escapeHtml((string)$rule['name']) ?>
+                            <?php if (!empty($rule['company']) && $rule['company'] !== $rule['name']): ?>
+                                (<?= $escaper->escapeHtml((string)$rule['company']) ?>)
+                            <?php endif; ?>
+                        </td>
+                        <td><code><?= $escaper->escapeHtml((string)$rule['code']) ?></code></td>
+                        <td>
+                            <?= $escaper->escapeHtml((string)$rule['match_on']) ?>:
+                            <code><?= $escaper->escapeHtml((string)$rule['pattern']) ?></code>
+                        </td>
+                        <td><?= $escaper->escapeHtml((string)($categories[$rule['category'] ?? ''] ?? '')) ?></td>
+                        <td><?= $escaper->escapeHtml($block->formatUtcDate((string)$rule['created_at'])) ?></td>
+                        <td>
+                            <form method="post" action="<?= $escaper->escapeUrl($block->getDeleteRuleUrl()) ?>">
+                                <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>"/>
+                                <input type="hidden" name="rule_id" value="<?= (int)$rule['rule_id'] ?>"/>
+                                <button type="submit" class="action-default">
+                                    <span><?= $escaper->escapeHtml(__('Delete')) ?></span>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </div>
+</div>

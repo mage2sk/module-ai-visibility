@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!--
+        Adds the "AI Source" column to the admin order grid: afterGetReport()
+        LEFT JOINs panth_aiv_order onto the collection returned for
+        sales_order_grid_data_source and leaves every other data source untouched.
+    -->
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <plugin name="panth_aiv_order_grid" type="Panth\AiVisibility\Plugin\OrderGridCollectionPlugin"/>
+    </type>
+</config>
