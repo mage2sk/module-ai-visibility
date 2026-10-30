@@ -1,0 +1,6 @@
+Panth_AiVisibility
+
+Copyright (c) 2026 Kishan Savaliya (Panth Infotech)
+
+Panth_AiVisibility is free and open-source software released under the
+MIT License. See LICENSE.txt for the full license text.

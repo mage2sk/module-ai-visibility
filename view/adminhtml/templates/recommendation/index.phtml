@@ -1,0 +1,293 @@
+<?php
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * Recommendations page. The before / after SVG comes from BeforeAfterBars, which escapes its own
+ * text; everything else is escaped here. No JavaScript: confirmations use <details> disclosures.
+ *
+ * @var \Panth\AiVisibility\Block\Adminhtml\Recommendations $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+$presenter = $block->getPresenter();
+$storeId = $block->getStoreId();
+$storeOptions = $block->getStoreOptions();
+$counts = $block->getCounts();
+$open = $block->getOpenRecommendations();
+$actions = $block->getActions();
+$undoColumn = $block->hasUndoableActions();
+$formKey = $block->getFormKey();
+$storeField = $storeId === null ? '' : '<input type="hidden" name="store" value="' . (int)$storeId . '"/>';
+?>
+<div class="panth-aiv panth-aiv-rec">
+    <p class="panth-aiv-rec__intro"><?= $escaper->escapeHtml(__(
+        'Fixes ranked by how much AI traffic they affect. Apply a fix on your store, then mark it as applied here: '
+        . 'after %1 days the module compares the traffic before and after, against similar pages you did not '
+        . 'change, and shows whether the fix likely helped.',
+        $block->getVerifyWindowDays()
+    )) ?></p>
+
+    <?php if (!$block->isEnabled()): ?>
+        <div class="message message-warning warning panth-aiv__banner" role="status">
+            <?= $escaper->escapeHtml(__('Recommendations are switched off, so the nightly check does not run.')) ?>
+            <a href="<?= $escaper->escapeUrl($block->getConfigUrl()) ?>"><?= $escaper->escapeHtml(
+                __('Turn them on in the configuration.')
+            ) ?></a>
+        </div>
+    <?php endif; ?>
+
+    <div class="panth-aiv__filters panth-aiv-rec__toolbar">
+        <form class="panth-aiv-rec__filter" method="get" action="<?= $escaper->escapeUrl($block->getFilterUrl()) ?>">
+            <div class="panth-aiv__field">
+                <label for="panth-aiv-rec-store"><?= $escaper->escapeHtml(__('Store view')) ?></label>
+                <select id="panth-aiv-rec-store" name="store" class="admin__control-select">
+                    <option value="0"><?= $escaper->escapeHtml(__('All store views')) ?></option>
+                    <?php foreach ($storeOptions as $id => $label): ?>
+                        <option value="<?= (int)$id ?>"<?= $storeId === (int)$id ? ' selected' : '' ?>><?= $escaper->escapeHtml($label) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="panth-aiv__field panth-aiv__field--action">
+                <button type="submit" class="action-secondary"><?= $escaper->escapeHtml(__('Show')) ?></button>
+            </div>
+        </form>
+        <?php if ($block->isEnabled()): ?>
+            <form class="panth-aiv-rec__refresh" method="post" action="<?= $escaper->escapeUrl($block->getPostUrl('refresh')) ?>">
+                <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>"/>
+                <?= /* @noEscape */ $storeField ?>
+                <button type="submit" class="action-default"><?= $escaper->escapeHtml(
+                    $storeId === null ? __('Check all store views now') : __('Check this store view now')
+                ) ?></button>
+            </form>
+        <?php endif; ?>
+        <p class="panth-aiv__range"><?= $escaper->escapeHtml(__(
+            '%1 open, %2 applied, %3 dismissed, %4 resolved. The check also runs every night.',
+            (int)$counts['open'],
+            (int)$counts['applied'],
+            (int)$counts['dismissed'],
+            (int)$counts['resolved']
+        )) ?></p>
+    </div>
+
+    <section class="panth-aiv-rec__section" aria-labelledby="panth-aiv-rec-open-title">
+        <h2 id="panth-aiv-rec-open-title" class="panth-aiv__h"><?= $escaper->escapeHtml(__('Open recommendations')) ?></h2>
+        <?php if ($open === []): ?>
+            <div class="panth-aiv__card panth-aiv-rec__empty">
+                <p><?= $escaper->escapeHtml(__('No open recommendations right now.')) ?></p>
+                <p class="panth-aiv__muted"><?= $escaper->escapeHtml(__(
+                    'Recommendations appear when the module sees enough AI traffic to point at a concrete problem. '
+                    . 'Small findings are left out until they pass the minimum volume set in the configuration.'
+                )) ?></p>
+            </div>
+        <?php else: ?>
+            <ol class="panth-aiv-rec__list">
+                <?php foreach ($open as $rank => $rec):
+                    $recId = (int)$rec['rec_id'];
+                    $ruleCode = (string)($rec['rule_code'] ?? '');
+                    $evidence = $rec['evidence'];
+                    $facts = $presenter->evidenceFacts($evidence, $ruleCode);
+                    $examples = $presenter->evidenceExamples($evidence);
+                    $bots = $presenter->evidenceBots($evidence);
+                    $hint = $presenter->fixHint($ruleCode);
+                    $link = $block->getFixLink($rec);
+                    $impact = max(0, min(100, (int)($rec['impact_score'] ?? 0)));
+                    $feedback = isset($rec['feedback']) ? (int)$rec['feedback'] : 0;
+                    ?>
+                    <li class="panth-aiv__card panth-aiv-rec__item" id="panth-aiv-rec-<?= (int)$recId ?>">
+                        <div class="panth-aiv-rec__head">
+                            <span class="panth-aiv-rec__rank" aria-hidden="true"><?= (int)$rank + 1 ?></span>
+                            <div class="panth-aiv-rec__heading">
+                                <h3 class="panth-aiv-rec__title"><?= $escaper->escapeHtml((string)$rec['title']) ?></h3>
+                                <p class="panth-aiv-rec__meta">
+                                    <?= $escaper->escapeHtml($presenter->ruleLabel($ruleCode)) ?>
+                                    &middot; <?= $escaper->escapeHtml($block->getStoreLabel((int)($rec['store_id'] ?? 0))) ?>
+                                    <?php if ((int)($rec['is_simulated'] ?? 0) === 1): ?>
+                                        &middot; <em><?= $escaper->escapeHtml(__('Simulated test data')) ?></em>
+                                    <?php endif; ?>
+                                </p>
+                            </div>
+                            <div class="panth-aiv-rec__score">
+                                <span class="panth-aiv-rec__score-value"><?= (int)$impact ?></span>
+                                <span class="panth-aiv-rec__score-label"><?= $escaper->escapeHtml(__('impact of 100')) ?></span>
+                                <meter min="0" max="100" value="<?= (int)$impact ?>"
+                                       title="<?= $escaper->escapeHtmlAttr(__('Impact score %1 of 100', $impact)) ?>"><?= (int)$impact ?></meter>
+                            </div>
+                        </div>
+
+                        <dl class="panth-aiv-rec__facts">
+                            <div>
+                                <dt><?= $escaper->escapeHtml(__('Affected')) ?></dt>
+                                <dd><?= $escaper->escapeHtml(number_format((int)($rec['affected_count'] ?? 0))) ?></dd>
+                            </div>
+                            <?php foreach ($facts as $fact): ?>
+                                <div>
+                                    <dt><?= $escaper->escapeHtml($fact['label']) ?></dt>
+                                    <dd><?= $escaper->escapeHtml($fact['value']) ?></dd>
+                                </div>
+                            <?php endforeach; ?>
+                        </dl>
+
+                        <?php if ($examples !== []): ?>
+                            <div class="panth-aiv-rec__examples">
+                                <strong><?= $escaper->escapeHtml(__('Top examples')) ?></strong>
+                                <ul>
+                                    <?php foreach ($examples as $example): ?>
+                                        <li><code><?= $escaper->escapeHtml($example) ?></code></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($bots !== []): ?>
+                            <p class="panth-aiv-rec__bots">
+                                <strong><?= $escaper->escapeHtml(__('AI bots involved')) ?></strong>
+                                <?= $escaper->escapeHtml(implode(', ', $bots)) ?>
+                            </p>
+                        <?php endif; ?>
+
+                        <?php if ($hint !== '' || $link !== null): ?>
+                            <div class="panth-aiv-rec__fix">
+                                <strong><?= $escaper->escapeHtml(__('How to fix')) ?></strong>
+                                <?php if ($hint !== ''): ?>
+                                    <span><?= $escaper->escapeHtml($hint) ?></span>
+                                <?php endif; ?>
+                                <?php if ($link !== null): ?>
+                                    <a href="<?= $escaper->escapeUrl($link['url']) ?>"><?= $escaper->escapeHtml($link['label']) ?></a>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="panth-aiv-rec__actions">
+                            <details class="panth-aiv-rec__confirm">
+                                <summary class="action-primary"><?= $escaper->escapeHtml(__('Mark as applied')) ?></summary>
+                                <form method="post" action="<?= $escaper->escapeUrl($block->getPostUrl('apply')) ?>">
+                                    <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>"/>
+                                    <input type="hidden" name="rec_id" value="<?= (int)$recId ?>"/>
+                                    <?= /* @noEscape */ $storeField ?>
+                                    <label for="panth-aiv-rec-note-<?= (int)$recId ?>"><?= $escaper->escapeHtml(
+                                        __('What did you change? (optional)')
+                                    ) ?></label>
+                                    <textarea id="panth-aiv-rec-note-<?= (int)$recId ?>" name="note" rows="2"
+                                              maxlength="<?= (int)\Panth\AiVisibility\Api\ActionLogInterface::MAX_NOTE ?>"
+                                              class="admin__control-textarea"></textarea>
+                                    <button type="submit" class="action-primary"><?= $escaper->escapeHtml(
+                                        __('Confirm: I applied this fix')
+                                    ) ?></button>
+                                </form>
+                            </details>
+                            <details class="panth-aiv-rec__confirm">
+                                <summary class="action-default"><?= $escaper->escapeHtml(__('Dismiss')) ?></summary>
+                                <form method="post" action="<?= $escaper->escapeUrl($block->getPostUrl('dismiss')) ?>">
+                                    <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>"/>
+                                    <input type="hidden" name="rec_id" value="<?= (int)$recId ?>"/>
+                                    <?= /* @noEscape */ $storeField ?>
+                                    <p><?= $escaper->escapeHtml(__('It is hidden and not suggested again for 30 days.')) ?></p>
+                                    <button type="submit" class="action-default"><?= $escaper->escapeHtml(
+                                        __('Confirm dismiss')
+                                    ) ?></button>
+                                </form>
+                            </details>
+                            <form class="panth-aiv-rec__feedback" method="post"
+                                  action="<?= $escaper->escapeUrl($block->getPostUrl('feedback')) ?>">
+                                <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>"/>
+                                <input type="hidden" name="rec_id" value="<?= (int)$recId ?>"/>
+                                <?= /* @noEscape */ $storeField ?>
+                                <span class="panth-aiv__muted"><?= $escaper->escapeHtml(__('Was this helpful?')) ?></span>
+                                <button type="submit" name="value" value="1"
+                                        class="action-default<?= $feedback === 1 ? ' _active' : '' ?>"
+                                        aria-pressed="<?= $feedback === 1 ? 'true' : 'false' ?>"><?= $escaper->escapeHtml(__('Useful')) ?></button>
+                                <button type="submit" name="value" value="-1"
+                                        class="action-default<?= $feedback === -1 ? ' _active' : '' ?>"
+                                        aria-pressed="<?= $feedback === -1 ? 'true' : 'false' ?>"><?= $escaper->escapeHtml(__('Not useful')) ?></button>
+                            </form>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ol>
+        <?php endif; ?>
+    </section>
+
+    <section class="panth-aiv-rec__section" aria-labelledby="panth-aiv-rec-applied-title">
+        <h2 id="panth-aiv-rec-applied-title" class="panth-aiv__h"><?= $escaper->escapeHtml(__('Applied & verified')) ?></h2>
+        <?php if ($actions === []): ?>
+            <div class="panth-aiv__card panth-aiv-rec__empty">
+                <p><?= $escaper->escapeHtml(__('No fixes applied yet.')) ?></p>
+                <p class="panth-aiv__muted"><?= $escaper->escapeHtml(__(
+                    'When you mark a recommendation as applied it is listed here, with the measured effect once '
+                    . 'enough days of data exist.'
+                )) ?></p>
+            </div>
+        <?php else: ?>
+            <div class="panth-aiv__card">
+                <table class="data-grid panth-aiv__table panth-aiv-rec__table">
+                    <thead><tr>
+                        <th class="data-grid-th" scope="col"><?= $escaper->escapeHtml(__('Fix')) ?></th>
+                        <th class="data-grid-th" scope="col"><?= $escaper->escapeHtml(__('Applied')) ?></th>
+                        <th class="data-grid-th" scope="col"><?= $escaper->escapeHtml(__('Result')) ?></th>
+                        <th class="data-grid-th" scope="col"><?= $escaper->escapeHtml(__('Before / after')) ?></th>
+                        <?php if ($undoColumn): ?>
+                            <th class="data-grid-th panth-aiv-rec__action-col" scope="col"><?= $escaper->escapeHtml(__('Action')) ?></th>
+                        <?php endif; ?>
+                    </tr></thead>
+                    <tbody>
+                    <?php foreach ($actions as $action):
+                        $actionId = (int)$action['action_id'];
+                        $metric = (string)($action['metric'] ?? '');
+                        $impactRow = $action['impact'];
+                        $tone = $block->getActionTone($action);
+                        $subjectCount = count($action['subjects']);
+                        ?>
+                        <tr>
+                            <td>
+                                <span class="panth-aiv__label"><?= $escaper->escapeHtml((string)$action['title']) ?></span>
+                                <span class="panth-aiv__path"><?= $escaper->escapeHtml(__(
+                                    'Measured: %1',
+                                    $presenter->metricLabel($metric)
+                                )) ?><?php if ($subjectCount > 1): ?>, <?= $escaper->escapeHtml(__('%1 items', $subjectCount)) ?><?php endif; ?></span>
+                                <?php if (trim((string)($action['note'] ?? '')) !== ''): ?>
+                                    <span class="panth-aiv__path"><?= $escaper->escapeHtml(__('Note: %1', (string)$action['note'])) ?></span>
+                                <?php endif; ?>
+                                <?php if ((int)($action['is_simulated'] ?? 0) === 1): ?>
+                                    <span class="panth-aiv__path"><em><?= $escaper->escapeHtml(__('Simulated test data')) ?></em></span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?= $escaper->escapeHtml($block->formatUtcDate((string)($action['applied_at'] ?? ''))) ?>
+                                <span class="panth-aiv__path"><?= $escaper->escapeHtml(__('by %1', $block->getAppliedBy($action))) ?></span>
+                            </td>
+                            <td>
+                                <span class="panth-aiv-rec__verdict panth-aiv-rec__verdict--<?= $escaper->escapeHtmlAttr($tone) ?>"><?= $escaper->escapeHtml(
+                                    $block->getActionStatusText($action)
+                                ) ?></span>
+                                <?php if ($impactRow !== null && $tone !== 'undone' && $tone !== 'pending'): ?>
+                                    <span class="panth-aiv__path"><?= $escaper->escapeHtml($presenter->methodSentence($impactRow)) ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <td><?= /* @noEscape */ $block->getBarsSvg($action) ?></td>
+                            <?php if ($undoColumn): ?>
+                            <td class="panth-aiv-rec__action-col">
+                                <?php if ($block->canUndo($action)): ?>
+                                    <details class="panth-aiv-rec__confirm panth-aiv-rec__confirm--end">
+                                        <summary class="action-default"><?= $escaper->escapeHtml(__('Undo')) ?></summary>
+                                        <form method="post" action="<?= $escaper->escapeUrl($block->getPostUrl('undo')) ?>">
+                                            <input type="hidden" name="form_key" value="<?= $escaper->escapeHtmlAttr($formKey) ?>"/>
+                                            <input type="hidden" name="action_id" value="<?= (int)$actionId ?>"/>
+                                            <?= /* @noEscape */ $storeField ?>
+                                            <p><?= $escaper->escapeHtml(__('Use this when you reverted the change. It will not be verified.')) ?></p>
+                                            <button type="submit" class="action-default"><?= $escaper->escapeHtml(__('Confirm undo')) ?></button>
+                                        </form>
+                                    </details>
+                                <?php endif; ?>
+                            </td>
+                            <?php endif; ?>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <p class="panth-aiv__muted"><?= $escaper->escapeHtml(__(
+                    'Results are estimates with a 95% range. "Likely helped" means the whole range points to an improvement; '
+                    . 'the module never claims certainty.'
+                )) ?></p>
+            </div>
+        <?php endif; ?>
+    </section>
+</div>

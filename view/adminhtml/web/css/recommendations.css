@@ -1,0 +1,271 @@
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * Recommendations page and the dashboard "Top recommendations" / "Latest verdicts" cards.
+ * Builds on dashboard.css (.panth-aiv__card, __h, __muted, __table ...); scoped to .panth-aiv.
+ */
+.panth-aiv__loop {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 16px;
+}
+.panth-aiv__loop .panth-aiv__card {
+    margin-bottom: 0;
+}
+.panth-aiv-rec-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.panth-aiv-rec-card .panth-aiv__h {
+    margin-bottom: 2px;
+}
+.panth-aiv-rec-card > .action-default {
+    align-self: flex-start;
+    margin-top: auto;
+}
+.panth-aiv-rec-card__list {
+    margin: 0 0 0 18px;
+    padding: 0;
+}
+.panth-aiv-rec-card__list li {
+    margin-bottom: 8px;
+}
+ul.panth-aiv-rec-card__list {
+    list-style: none;
+    margin-left: 0;
+}
+.panth-aiv-rec__intro {
+    color: #41403c;
+    margin: 0 0 16px;
+    max-width: 900px;
+}
+.panth-aiv-rec__toolbar {
+    justify-content: space-between;
+}
+.panth-aiv-rec__filter {
+    align-items: flex-end;
+    display: flex;
+    gap: 12px 16px;
+}
+.panth-aiv-rec__refresh {
+    align-self: flex-end;
+}
+.panth-aiv-rec__section {
+    margin-bottom: 24px;
+}
+.panth-aiv-rec__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.panth-aiv-rec__item {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.panth-aiv-rec__head {
+    align-items: flex-start;
+    display: flex;
+    gap: 14px;
+}
+.panth-aiv-rec__rank {
+    background: #f1f1ef;
+    border-radius: 50%;
+    color: #41403c;
+    flex: 0 0 28px;
+    font-weight: 600;
+    height: 28px;
+    line-height: 28px;
+    text-align: center;
+}
+.panth-aiv-rec__heading {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.panth-aiv-rec__title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 2px 0 4px;
+    overflow-wrap: anywhere;
+}
+.panth-aiv-rec__meta {
+    color: #52514e;
+    font-size: 12px;
+    margin: 0;
+}
+.panth-aiv-rec__score {
+    flex: 0 0 110px;
+    text-align: right;
+}
+.panth-aiv-rec__score-value {
+    color: #0b0b0b;
+    font-size: 22px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    line-height: 1.1;
+}
+.panth-aiv-rec__score-label {
+    color: #52514e;
+    display: block;
+    font-size: 11px;
+}
+.panth-aiv-rec__score meter {
+    height: 6px;
+    width: 100%;
+}
+.panth-aiv-rec__facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    margin: 0;
+}
+.panth-aiv-rec__facts dt {
+    color: #52514e;
+    font-size: 12px;
+    font-weight: 400;
+}
+.panth-aiv-rec__facts dd {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+.panth-aiv-rec__examples ul {
+    margin: 4px 0 0 18px;
+}
+.panth-aiv-rec__examples li {
+    margin-bottom: 2px;
+    overflow-wrap: anywhere;
+}
+.panth-aiv-rec__examples code {
+    font-size: 12px;
+}
+.panth-aiv-rec__fix {
+    background: #f8f8f6;
+    border-left: 4px solid #2a78d6;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    padding: 8px 12px;
+}
+.panth-aiv-rec__fix strong {
+    flex-basis: 100%;
+}
+.panth-aiv-rec__actions {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+}
+.panth-aiv-rec__confirm {
+    position: relative;
+}
+.panth-aiv-rec__confirm summary {
+    cursor: pointer;
+    display: inline-block;
+    list-style: none;
+}
+.panth-aiv-rec__confirm summary::-webkit-details-marker {
+    display: none;
+}
+/* The confirmation opens as a panel over the content below, so nothing on the page moves. */
+.panth-aiv-rec__confirm form {
+    background: #f8f8f6;
+    border: 1px solid #c9c9c6;
+    border-radius: 4px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .15);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    left: 0;
+    max-width: calc(100vw - 40px);
+    padding: 10px 12px;
+    position: absolute;
+    text-align: left;
+    top: calc(100% + 6px);
+    white-space: normal;
+    width: 380px;
+    z-index: 20;
+}
+.panth-aiv-rec__confirm--end form {
+    left: auto;
+    right: 0;
+    width: 300px;
+}
+.panth-aiv-rec__confirm form p {
+    margin: 0;
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+.panth-aiv-rec__confirm form button {
+    align-self: flex-start;
+}
+.panth-aiv-rec__confirm label {
+    font-size: 12px;
+    font-weight: 600;
+}
+.panth-aiv-rec__feedback {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+.panth-aiv-rec__feedback ._active {
+    border-color: #41403c;
+    font-weight: 600;
+}
+.panth-aiv-rec__bots {
+    margin: 0;
+}
+.panth-aiv-rec__bots strong {
+    margin-right: 6px;
+}
+.panth-aiv-rec__action-col {
+    white-space: nowrap;
+    width: 1%;
+}
+.panth-aiv-rec__empty p {
+    margin: 0 0 6px;
+}
+.panth-aiv-rec__table td {
+    vertical-align: top;
+}
+.panth-aiv-rec__verdict {
+    display: block;
+    font-weight: 600;
+}
+.panth-aiv-rec__verdict--good {
+    color: #0a6b0a;
+}
+.panth-aiv-rec__verdict--bad {
+    color: #b42318;
+}
+.panth-aiv-rec__verdict--neutral {
+    color: #1f1f1d;
+}
+.panth-aiv-rec__verdict--unknown,
+.panth-aiv-rec__verdict--pending,
+.panth-aiv-rec__verdict--undone {
+    color: #52514e;
+    font-weight: 400;
+}
+.panth-aiv-bars {
+    display: block;
+    max-width: 100%;
+}
+.panth-aiv-bars text {
+    font-family: inherit;
+}
+@media (max-width: 1100px) {
+    .panth-aiv__loop {
+        grid-template-columns: 1fr;
+    }
+    .panth-aiv-rec__feedback {
+        margin-left: 0;
+    }
+}

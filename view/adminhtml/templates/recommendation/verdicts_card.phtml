@@ -1,0 +1,33 @@
+<?php
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * "Latest verdicts" dashboard card.
+ *
+ * @var \Panth\AiVisibility\Block\Adminhtml\VerdictsCard $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+$verdicts = $block->getLatestVerdicts();
+$pendingText = $block->getPendingText();
+?>
+<section class="panth-aiv__card panth-aiv-rec-card" aria-labelledby="panth-aiv-verdicts-card-title">
+    <h2 id="panth-aiv-verdicts-card-title" class="panth-aiv__h"><?= $escaper->escapeHtml(__('Latest verdicts')) ?></h2>
+    <?php if ($verdicts === []): ?>
+        <p class="panth-aiv__muted"><?= $escaper->escapeHtml(__('No applied fix has been checked yet.')) ?></p>
+    <?php else: ?>
+        <ul class="panth-aiv-rec-card__list">
+            <?php foreach ($verdicts as $action): ?>
+                <li>
+                    <span class="panth-aiv__label"><?= $escaper->escapeHtml((string)$action['title']) ?></span>
+                    <span class="panth-aiv-rec__verdict panth-aiv-rec__verdict--<?= $escaper->escapeHtmlAttr($block->getTone($action)) ?>"><?= $escaper->escapeHtml(
+                        $block->getVerdictText($action)
+                    ) ?></span>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+    <?php if ($pendingText !== ''): ?>
+        <p class="panth-aiv__muted"><?= $escaper->escapeHtml($pendingText) ?></p>
+    <?php endif; ?>
+    <a class="action-default" href="<?= $escaper->escapeUrl($block->getPageUrl()) ?>"><?= $escaper->escapeHtml(__('See all applied fixes')) ?></a>
+</section>

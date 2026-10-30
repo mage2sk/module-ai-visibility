@@ -1,0 +1,259 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * Only general/enabled can differ per store view; every other setting is
+ * global (default scope) because crawler, visit and order data is collected
+ * and summarised across all store views.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <tab id="panth" translate="label" sortOrder="400">
+            <label>Panth Infotech</label>
+        </tab>
+        <section id="panth_aivisibility" translate="label" type="text" sortOrder="62"
+                 showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>AI Visibility</label>
+            <tab>panth</tab>
+            <resource>Panth_AiVisibility::config</resource>
+
+            <group id="general" translate="label" type="text" sortOrder="10"
+                   showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>General</label>
+                <field id="enabled" translate="label comment" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable AI Visibility</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Master switch, can be set per store view. When off, this store view records no AI crawler hits and no AI visits, and the storefront collector script is not added to its pages. Data that was already collected stays on the dashboard.]]></comment>
+                </field>
+                <field id="track_crawlers" translate="label comment" type="select" sortOrder="20"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Track AI Crawlers</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[<b>Default Yes.</b> Counts requests from known AI crawlers (training, search and live-answer bots such as GPTBot, ClaudeBot or PerplexityBot) while Magento serves the page, including built-in full page cache hits. Human visitors only cost an in-memory User-Agent check. Store views listed under <b>Access Log Import</b> are counted from the log files instead, so no hit is counted twice.]]></comment>
+                </field>
+                <field id="track_visits" translate="label comment" type="select" sortOrder="30"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Track Visits from AI Assistants</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[<b>Default Yes.</b> Adds a small CSP-safe script (under 2 KB, no libraries, works on Hyva and Luma) that reports once per browser session when a shopper arrives from an AI assistant such as ChatGPT, Perplexity, Gemini or Copilot. Only the referrer host name, the <code>utm_source</code> value and the landing path are sent - never full URLs, query strings or personal data.]]></comment>
+                </field>
+                <field id="attribution_window_days" translate="label comment" type="text" sortOrder="40"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Attribution Window (days)</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-1-365</validate>
+                    <comment><![CDATA[<b>Default 30</b> (allowed 1-365). An order is credited to an AI assistant when the shopper arrived from it within this many days before checkout. The first and the latest AI source are kept in a signed, HttpOnly first-party cookie (<code>panth_aiv</code>) that expires after this window.]]></comment>
+                </field>
+                <field id="attribution_model" translate="label comment" type="select" sortOrder="50"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Attribution Model</label>
+                    <source_model>Panth\AiVisibility\Model\Source\AttributionModel</source_model>
+                    <comment><![CDATA[<b>Default: first touch.</b> Decides which AI source gets the credit in the order grid and in revenue reports when a shopper came from more than one assistant: <b>First touch</b> credits the assistant that introduced the shopper, <b>Last touch</b> the most recent one. Both are stored with every order, so you can switch at any time without losing data.]]></comment>
+                </field>
+            </group>
+
+            <group id="bots" translate="label" type="text" sortOrder="20"
+                   showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>AI Crawlers</label>
+                <field id="discovery_enabled" translate="label comment" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Discover Unknown AI Bots and Apps</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[<b>Default Yes.</b> Bot-like User-Agents that are not in the built-in catalogue (and any client that fetches <code>/llms.txt</code>), plus AI-looking referrer hosts and <code>utm_source</code> values, are listed as candidates on the <b>Discovery</b> page. There you confirm them as AI (they are then counted like built-in ones, including their earlier hits), mark them Not AI or ignore them. Well-known search engine, social, SEO and uptime bots are never listed.]]></comment>
+                </field>
+                <field id="custom_patterns" translate="label comment" type="textarea" sortOrder="20"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Custom AI Bots</label>
+                    <comment><![CDATA[One bot per line: <code>Name | user-agent token | category | company</code>. The token is matched case-insensitively anywhere in the User-Agent and needs at least 3 characters. Category is <code>training</code>, <code>search</code>, <code>live</code> or <code>other</code> (default <code>other</code>); company is optional and defaults to the name. Example: <code>ExampleBot | ExampleBot/ | search | Example Inc</code>. Lines starting with <code>#</code> are ignored. Bots confirmed on the Discovery page are added automatically and do not need to be listed here.]]></comment>
+                </field>
+                <field id="raw_daily_cap" translate="label comment" type="text" sortOrder="30"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Max Detailed Hits per Day</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-1000-10000000</validate>
+                    <comment><![CDATA[<b>Default 200000</b> (allowed 1000-10000000). Detailed crawler hit rows (path, status, response time) stored per UTC day across all store views. Above this number, hits are still counted per bot and status class in a compact daily table, so totals on the dashboard stay correct while the detailed log stops growing during a crawler storm.]]></comment>
+                </field>
+            </group>
+
+            <group id="sources" translate="label" type="text" sortOrder="30"
+                   showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>AI Referrer Sources</label>
+                <field id="custom_hosts" translate="label comment" type="textarea" sortOrder="10"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Custom AI Referrer Hosts</label>
+                    <comment><![CDATA[One host per line: <code>host | Source Name</code>. Subdomains match as well, so <code>assistant.example.com</code> also covers <code>eu.assistant.example.com</code>. Example: <code>assistant.example.com | Example Assistant</code>. The built-in list already covers ChatGPT, Perplexity, Gemini, Microsoft Copilot, Claude, Meta AI, Le Chat (Mistral), DeepSeek, Grok and You.com.]]></comment>
+                </field>
+                <field id="custom_utm" translate="label comment" type="textarea" sortOrder="20"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Custom utm_source Values</label>
+                    <comment><![CDATA[One value per line: <code>utm_value | Source Name</code>, matched case-insensitively against the <code>utm_source</code> parameter of the landing page. Letters, digits, dot, dash and underscore only, up to 64 characters. Example: <code>example-assistant | Example Assistant</code>. Use this when an AI app adds its own <code>utm_source</code> but hides the referrer.]]></comment>
+                </field>
+            </group>
+
+            <group id="collector" translate="label" type="text" sortOrder="40"
+                   showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Storefront Collector</label>
+                <field id="rate_limit_per_minute" translate="label comment" type="text" sortOrder="10"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Max Reports per IP per Minute</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-1-600</validate>
+                    <comment><![CDATA[<b>Default 20</b> (allowed 1-600). Server-side limit for the visit collector endpoint <code>/panth_aiv/collect</code>. Requests above it are answered with an empty 204 response and dropped. IP addresses are only kept as salted hashes in short-lived counters.]]></comment>
+                </field>
+                <field id="landing_sample_rate" translate="label comment" type="text" sortOrder="20"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Direct Landing Sample Rate (%)</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-0-100</validate>
+                    <comment><![CDATA[<b>Default 25</b> (allowed 0-100). Share of sessions that arrive without any referrer on a deep page (not the home page) that are recorded as direct landings. AI assistant apps often hide the referrer, so these landings show which pages are opened straight from apps and chats. <code>0</code> turns sampling off.]]></comment>
+                </field>
+            </group>
+
+            <group id="privacy" translate="label" type="text" sortOrder="50"
+                   showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Privacy and Data Retention</label>
+                <field id="respect_cookie_consent" translate="label comment" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Respect Cookie Consent</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[<b>Default Yes.</b> When Magento cookie restriction mode is on (General &gt; Web &gt; Default Cookie Settings) and the visitor has not allowed cookies, the attribution cookie is not set. The visit is still counted anonymously, but a later order from that visitor cannot be credited to the AI assistant.]]></comment>
+                </field>
+                <field id="hit_retention_days" translate="label comment" type="text" sortOrder="20"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Keep Detailed Crawler Hits (days)</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-1-365</validate>
+                    <comment><![CDATA[<b>Default 14</b> (allowed 1-365). Detailed crawler hit rows (Crawler Log) older than this are deleted by the nightly cleanup, after they have been summarised into the daily tables that feed the dashboard.]]></comment>
+                </field>
+                <field id="raw_visit_retention_days" translate="label comment" type="text" sortOrder="30"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Keep Detailed AI Visits (days)</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-1-730</validate>
+                    <comment><![CDATA[<b>Default 30</b> (allowed 1-730). Individual AI visit rows (source, referrer host, landing path) older than this are deleted after they have been summarised. Visit rows hold no IP address, customer or session data.]]></comment>
+                </field>
+                <field id="landing_retention_days" translate="label comment" type="text" sortOrder="40"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Keep Direct Landings (days)</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-1-365</validate>
+                    <comment><![CDATA[<b>Default 30</b> (allowed 1-365). Sampled direct landing rows older than this are deleted by the nightly cleanup.]]></comment>
+                </field>
+                <field id="daily_retention_months" translate="label comment" type="text" sortOrder="50"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Keep Daily Summaries (months)</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-1-60</validate>
+                    <comment><![CDATA[<b>Default 13</b> (allowed 1-60), which keeps a full year plus one month for comparison. The daily summary tables behind the dashboard charts and reports are pruned after this many months.]]></comment>
+                </field>
+            </group>
+
+            <group id="log_import" translate="label" type="text" sortOrder="60"
+                   showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Access Log Import (Varnish / CDN)</label>
+                <field id="enabled" translate="label comment" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Import Crawler Hits from Access Logs</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[<b>Default No.</b> Turn this on when pages are served by Varnish or a CDN: cached responses never reach Magento, so crawler hits would be under-counted. A cron job reads new lines from the files below every 5 minutes. Store views listed below are counted only from their log files and not by Magento, so no hit is counted twice. You can also run <code>bin/magento panth:aivisibility:import-logs</code>.]]></comment>
+                </field>
+                <field id="files" translate="label comment" type="textarea" sortOrder="20"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Log Files</label>
+                    <comment><![CDATA[One file per line: <code>/absolute/path/access.log | store_code</code>, for example <code>/var/log/nginx/access.log | default</code>. The store code defaults to <code>default</code>. Files must be readable by the user that runs cron and use the combined log format (the default of nginx, Apache and varnishncsa). Log rotation is detected automatically.]]></comment>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+                <field id="max_lines_per_run" translate="label comment" type="text" sortOrder="30"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Max Lines per Run</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-1000-5000000</validate>
+                    <comment><![CDATA[<b>Default 200000</b> (allowed 1000-5000000). Upper limit of log lines read in one run across all files. Lines above the limit are picked up by the next run, so a large backlog is worked off in steps without long-running cron jobs.]]></comment>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+            </group>
+
+            <group id="recommendations" translate="label" type="text" sortOrder="70"
+                   showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Recommendations</label>
+                <field id="enabled" translate="label comment" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Create Recommendations</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[<b>Default Yes.</b> A nightly cron job (or <code>bin/magento panth:aivisibility:recommend</code>) checks the collected data against ten rules, for example pages that answer 404 to AI bots, products no AI bot has fetched, AI search bots blocked by <code>robots.txt</code> or AI visitors landing on out-of-stock products, and lists concrete fixes ranked by impact on <b>AI Visibility &gt; Recommendations</b>. The rules only read data; nothing in the store is changed automatically.]]></comment>
+                </field>
+                <field id="min_volume" translate="label comment" type="text" sortOrder="20"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Minimum Events per Finding</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-1-1000000</validate>
+                    <comment><![CDATA[<b>Default 20</b> (allowed 1-1000000). A problem is only recommended when at least this many requests, visits or items are behind it, so a single stray bot request does not create a to-do. Lower it on a small or new store, raise it on a busy one.]]></comment>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+                <field id="max_open" translate="label comment" type="text" sortOrder="30"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Max Open Recommendations per Store View</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-1-500</validate>
+                    <comment><![CDATA[<b>Default 50</b> (allowed 1-500). Only the highest-impact open recommendations are kept per store view, so the list stays short enough to act on.]]></comment>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+            </group>
+
+            <group id="verify" translate="label" type="text" sortOrder="80"
+                   showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Fix Verification</label>
+                <field id="window_days" translate="label comment" type="text" sortOrder="10"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Verification Window (days)</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-7-56</validate>
+                    <comment><![CDATA[<b>Default 14</b> (allowed 7-56). When you mark a recommendation as applied, this many UTC days before the change are compared with the same number of days after it (the day of the change itself is left out) and, where possible, with similar pages or products you did not change. The verdict appears the day after the window ends: likely helped, no clear effect, likely made it worse, or not enough data yet, always with a range.]]></comment>
+                </field>
+                <field id="min_events" translate="label comment" type="text" sortOrder="20"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Minimum Events for a Verdict</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-1-1000000</validate>
+                    <comment><![CDATA[<b>Default 30</b> (allowed 1-1000000). With fewer requests, visits or orders in both windows together, the result is shown as "not enough data yet" instead of a verdict that would only be noise.]]></comment>
+                </field>
+                <field id="max_controls" translate="label comment" type="text" sortOrder="30"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Max Comparison Subjects</label>
+                    <validate>required-entry validate-digits validate-digits-range digits-range-3-500</validate>
+                    <comment><![CDATA[<b>Default 50</b> (allowed 3-500). Number of unchanged pages or products of the same kind, picked by the closest traffic before the change, used as the comparison group. It separates the effect of a fix from store-wide ups and downs such as a new bot or a seasonal trend.]]></comment>
+                </field>
+            </group>
+
+            <group id="email" translate="label" type="text" sortOrder="90"
+                   showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Weekly Summary Email</label>
+                <field id="enabled" translate="label comment" type="select" sortOrder="10"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Send Weekly Summary</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[<b>Default No.</b> Once a week, cron emails a short summary: AI crawler hits, AI visits and orders compared with the week before, the top open recommendations and the latest verdicts on applied fixes. It is sent through the Magento mail transport. Preview it with <code>bin/magento panth:aivisibility:email --dry-run</code>.]]></comment>
+                </field>
+                <field id="recipients" translate="label comment" type="textarea" sortOrder="20"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Recipients</label>
+                    <backend_model>Panth\AiVisibility\Model\Config\Backend\EmailRecipients</backend_model>
+                    <comment><![CDATA[One or more email addresses, separated by commas or new lines (up to 20). Every address is checked when you save; at least one is needed while the weekly summary is on.]]></comment>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+                <field id="sender" translate="label comment" type="select" sortOrder="30"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Email Sender</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Identity</source_model>
+                    <comment><![CDATA[<b>Default: General Contact.</b> Store email identity the summary is sent from. Names and addresses are set under Stores &gt; Configuration &gt; General &gt; Store Email Addresses.]]></comment>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+                <field id="weekday" translate="label comment" type="select" sortOrder="40"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Send on</label>
+                    <source_model>Panth\AiVisibility\Model\Source\Weekday</source_model>
+                    <comment><![CDATA[<b>Default Monday.</b> Weekday (UTC) the summary is sent on. It is sent at most once per week.]]></comment>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+                <field id="hour" translate="label comment" type="select" sortOrder="50"
+                       showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Send at (UTC)</label>
+                    <source_model>Panth\AiVisibility\Model\Source\Hour</source_model>
+                    <comment><![CDATA[<b>Default 07:00 UTC.</b> The hourly cron job sends the summary in its first run at or after this hour on the chosen weekday; if cron was not running then, the summary goes out with the next run in the same week.]]></comment>
+                    <depends><field id="enabled">1</field></depends>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

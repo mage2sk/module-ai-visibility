@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * Admin pages: dashboard/index, log/index, discovery/index,
+ * discovery/classify (POST), discovery/deleteRule (POST), health/run (POST),
+ * dashboard/export, recommendation/index, recommendation/{apply,dismiss,feedback,undo,refresh} (POST).
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:App/etc/routes.xsd">
+    <router id="admin">
+        <route id="panth_aivisibility" frontName="panth_aivisibility">
+            <module name="Panth_AiVisibility" before="Magento_Backend"/>
+        </route>
+    </router>
+</config>

@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="content">
+            <block class="Panth\AiVisibility\Block\Adminhtml\Discovery"
+                   name="panth_aiv.discovery"
+                   template="Panth_AiVisibility::discovery/index.phtml"/>
+        </referenceContainer>
+    </body>
+</page>

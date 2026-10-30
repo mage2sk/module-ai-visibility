@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * controller_front_send_response_before is dispatched by
+ * Magento\Framework\App\Http::launch() after the front controller has
+ * produced the response, so built-in full page cache hits are included.
+ * TrackRequest only runs in-memory User-Agent checks for humans; every
+ * database writer it uses is injected as a Proxy (see etc/di.xml).
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="controller_front_send_response_before">
+        <observer name="panth_aiv_track_request" instance="Panth\AiVisibility\Observer\TrackRequest"/>
+    </event>
+</config>

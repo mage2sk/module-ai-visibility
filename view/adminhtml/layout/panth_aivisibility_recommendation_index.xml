@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <css src="Panth_AiVisibility::css/dashboard.css"/>
+        <css src="Panth_AiVisibility::css/recommendations.css"/>
+    </head>
+    <body>
+        <referenceContainer name="content">
+            <block class="Panth\AiVisibility\Block\Adminhtml\Recommendations"
+                   name="panth_aiv.recommendations"
+                   template="Panth_AiVisibility::recommendation/index.phtml"/>
+        </referenceContainer>
+    </body>
+</page>

@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * CSV export links under the dashboard. Included by panth_aivisibility_dashboard_index.xml through
+ * <update handle="panth_aivisibility_dashboard_export_links"/>.
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="content">
+            <block class="Panth\AiVisibility\Block\Adminhtml\ExportLinks"
+                   name="panth_aiv.export_links"
+                   after="panth_aiv.dashboard"
+                   template="Panth_AiVisibility::dashboard/export_links.phtml"
+                   aclResource="Panth_AiVisibility::dashboard"/>
+        </referenceContainer>
+    </body>
+</page>

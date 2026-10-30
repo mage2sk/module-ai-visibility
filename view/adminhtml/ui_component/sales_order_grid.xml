@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * Adds the "AI Source" column to the admin order grid. The data comes from
+ * Panth\AiVisibility\Plugin\OrderGridCollectionPlugin (LEFT JOIN on
+ * panth_aiv_order, first or last touch per the configured attribution
+ * model). The filter offers every known AI source; the cell shows the
+ * source's display name. Orders without AI attribution stay empty.
+ */
+-->
+<listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
+    <columns name="sales_order_columns">
+        <column name="ai_source" class="Panth\AiVisibility\Ui\Component\Listing\Column\AiSource" sortOrder="215">
+            <settings>
+                <filter>select</filter>
+                <options class="Panth\AiVisibility\Model\Source\AiSourceOptions"/>
+                <dataType>select</dataType>
+                <label translate="true">AI Source</label>
+                <visible>true</visible>
+            </settings>
+        </column>
+    </columns>
+</listing>

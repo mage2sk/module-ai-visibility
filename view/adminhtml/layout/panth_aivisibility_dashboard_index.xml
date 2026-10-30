@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <update handle="panth_aivisibility_dashboard_export_links"/>
+    <head>
+        <css src="Panth_AiVisibility::css/dashboard.css"/>
+    </head>
+    <body>
+        <referenceContainer name="content">
+            <block class="Panth\AiVisibility\Block\Adminhtml\Dashboard"
+                   name="panth_aiv.dashboard"
+                   template="Panth_AiVisibility::dashboard/index.phtml">
+                <block class="Panth\AiVisibility\Block\Adminhtml\HealthCard"
+                       name="panth_aiv.health_card"
+                       as="health_card"
+                       template="Panth_AiVisibility::health/card.phtml"/>
+                <!--
+                    Recommend and verify cards (1.1), rendered by dashboard/index.phtml through
+                    getChildHtml('loop_cards'). The container prints nothing while both cards are empty.
+                -->
+                <container name="panth_aiv.loop_cards" as="loop_cards" htmlTag="div" htmlClass="panth-aiv__loop">
+                    <block class="Panth\AiVisibility\Block\Adminhtml\RecommendationsCard"
+                           name="panth_aiv.recommendations_card"
+                           as="recommendations_card"
+                           template="Panth_AiVisibility::recommendation/card.phtml"/>
+                    <block class="Panth\AiVisibility\Block\Adminhtml\VerdictsCard"
+                           name="panth_aiv.verdicts_card"
+                           as="verdicts_card"
+                           template="Panth_AiVisibility::recommendation/verdicts_card.phtml"/>
+                </container>
+            </block>
+        </referenceContainer>
+    </body>
+</page>

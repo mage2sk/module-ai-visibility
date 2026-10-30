@@ -1,0 +1,164 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+
+    <!-- Service contracts. -->
+    <preference for="Panth\AiVisibility\Api\BotClassifierInterface" type="Panth\AiVisibility\Service\BotClassifier"/>
+    <preference for="Panth\AiVisibility\Api\PageTypeResolverInterface" type="Panth\AiVisibility\Service\PageTypeResolver"/>
+    <preference for="Panth\AiVisibility\Api\HitWriterInterface" type="Panth\AiVisibility\Service\HitWriter"/>
+    <preference for="Panth\AiVisibility\Api\SourceClassifierInterface" type="Panth\AiVisibility\Service\SourceClassifier"/>
+    <preference for="Panth\AiVisibility\Api\AttributionCookieInterface" type="Panth\AiVisibility\Service\AttributionCookie"/>
+    <preference for="Panth\AiVisibility\Api\RollupInterface" type="Panth\AiVisibility\Service\Rollup"/>
+    <preference for="Panth\AiVisibility\Api\RelabelerInterface" type="Panth\AiVisibility\Service\Relabeler"/>
+    <preference for="Panth\AiVisibility\Api\HealthRepositoryInterface" type="Panth\AiVisibility\Service\Health\HealthRepository"/>
+
+    <!-- Recommend and verify (1.1). -->
+    <preference for="Panth\AiVisibility\Api\RecommendationEngineInterface" type="Panth\AiVisibility\Service\Recommendation\Engine"/>
+    <preference for="Panth\AiVisibility\Api\RecommendationRepositoryInterface" type="Panth\AiVisibility\Service\Recommendation\Repository"/>
+    <preference for="Panth\AiVisibility\Api\ActionLogInterface" type="Panth\AiVisibility\Service\Recommendation\ActionLog"/>
+    <preference for="Panth\AiVisibility\Api\MetricProviderInterface" type="Panth\AiVisibility\Service\Verification\MetricProvider"/>
+    <preference for="Panth\AiVisibility\Api\ImpactCalculatorInterface" type="Panth\AiVisibility\Service\Verification\ImpactCalculator"/>
+
+    <!--
+        The ten starter rules (item name = rule code). Other modules can add
+        their own rules by adding items to this argument.
+    -->
+    <type name="Panth\AiVisibility\Service\Recommendation\Engine">
+        <arguments>
+            <argument name="rules" xsi:type="array">
+                <item name="robots_blocks_ai_search" xsi:type="object">Panth\AiVisibility\Service\Recommendation\Rule\RobotsBlocksAiSearch</item>
+                <item name="bot_404" xsi:type="object">Panth\AiVisibility\Service\Recommendation\Rule\Bot404</item>
+                <item name="bot_errors_or_slow" xsi:type="object">Panth\AiVisibility\Service\Recommendation\Rule\BotErrorsOrSlow</item>
+                <item name="never_crawled_products" xsi:type="object">Panth\AiVisibility\Service\Recommendation\Rule\NeverCrawledProducts</item>
+                <item name="live_answers_no_sales" xsi:type="object">Panth\AiVisibility\Service\Recommendation\Rule\LiveAnswersNoSales</item>
+                <item name="thin_content_ai_read" xsi:type="object">Panth\AiVisibility\Service\Recommendation\Rule\ThinContentAiRead</item>
+                <item name="llms_not_served" xsi:type="object">Panth\AiVisibility\Service\Recommendation\Rule\LlmsNotServed</item>
+                <item name="parameter_crawl_waste" xsi:type="object">Panth\AiVisibility\Service\Recommendation\Rule\ParameterCrawlWaste</item>
+                <item name="ai_visitors_out_of_stock" xsi:type="object">Panth\AiVisibility\Service\Recommendation\Rule\AiVisitorsOutOfStock</item>
+                <item name="discovery_backlog" xsi:type="object">Panth\AiVisibility\Service\Recommendation\Rule\DiscoveryBacklog</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!--
+        TrackRequest runs on every storefront response (including full page
+        cache hits). Human visitors must only pay for the in-memory
+        User-Agent checks, so the database writer is a Proxy and is only
+        constructed when a bot hit is actually recorded.
+    -->
+    <type name="Panth\AiVisibility\Observer\TrackRequest">
+        <arguments>
+            <argument name="hitWriter" xsi:type="object">Panth\AiVisibility\Api\HitWriterInterface\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Panth\AiVisibility\Observer\AttributeOrder">
+        <arguments>
+            <argument name="attributionCookie" xsi:type="object">Panth\AiVisibility\Api\AttributionCookieInterface\Proxy</argument>
+        </arguments>
+    </type>
+
+    <!-- Data-health self-checks, run hourly by cron and on demand from the dashboard. -->
+    <type name="Panth\AiVisibility\Service\Health\HealthRunner">
+        <arguments>
+            <argument name="checks" xsi:type="array">
+                <item name="pageCache" xsi:type="object">Panth\AiVisibility\Service\Health\PageCacheCheck</item>
+                <item name="cron" xsi:type="object">Panth\AiVisibility\Service\Health\CronCheck</item>
+                <item name="collector" xsi:type="object">Panth\AiVisibility\Service\Health\CollectorCheck</item>
+                <item name="consent" xsi:type="object">Panth\AiVisibility\Service\Health\ConsentCheck</item>
+                <item name="tableSize" xsi:type="object">Panth\AiVisibility\Service\Health\TableSizeCheck</item>
+                <item name="logImport" xsi:type="object">Panth\AiVisibility\Service\Health\LogImportCheck</item>
+                <item name="tracking" xsi:type="object">Panth\AiVisibility\Service\Health\TrackingCheck</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!--
+        Console commands: panth:aivisibility:rollup, panth:aivisibility:import-logs,
+        panth:aivisibility:simulate, panth:aivisibility:recommend, panth:aivisibility:verify,
+        panth:aivisibility:email.
+    -->
+    <type name="Magento\Framework\Console\CommandList">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="panth_aiv_rollup" xsi:type="object">Panth\AiVisibility\Console\Command\RollupCommand</item>
+                <item name="panth_aiv_import_logs" xsi:type="object">Panth\AiVisibility\Console\Command\ImportLogsCommand</item>
+                <item name="panth_aiv_simulate" xsi:type="object">Panth\AiVisibility\Console\Command\SimulateCommand</item>
+                <item name="panth_aiv_recommend" xsi:type="object">Panth\AiVisibility\Console\Command\RecommendCommand</item>
+                <item name="panth_aiv_verify" xsi:type="object">Panth\AiVisibility\Console\Command\VerifyCommand</item>
+                <item name="panth_aiv_email" xsi:type="object">Panth\AiVisibility\Console\Command\EmailCommand</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!--
+        Commands are constructed on every bin/magento call (also during
+        setup:install / setup:upgrade, before the tables exist), so their
+        heavy services are Proxies.
+    -->
+    <type name="Panth\AiVisibility\Console\Command\RollupCommand">
+        <arguments>
+            <argument name="rollup" xsi:type="object">Panth\AiVisibility\Api\RollupInterface\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Panth\AiVisibility\Console\Command\ImportLogsCommand">
+        <arguments>
+            <argument name="importer" xsi:type="object">Panth\AiVisibility\Service\LogImport\LogImporter\Proxy</argument>
+        </arguments>
+    </type>
+    <!-- The log import rolls up every day it added hits to (the rollup cron only covers today and yesterday). -->
+    <type name="Panth\AiVisibility\Service\LogImport\LogImporter">
+        <arguments>
+            <argument name="rollup" xsi:type="object">Panth\AiVisibility\Api\RollupInterface</argument>
+        </arguments>
+    </type>
+    <type name="Panth\AiVisibility\Cron\Discovery">
+        <arguments>
+            <argument name="candidates" xsi:type="object">Panth\AiVisibility\Service\Discovery\CandidateRepository</argument>
+        </arguments>
+    </type>
+    <type name="Panth\AiVisibility\Console\Command\SimulateCommand">
+        <arguments>
+            <argument name="simulator" xsi:type="object">Panth\AiVisibility\Service\Simulator\Simulator\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Panth\AiVisibility\Console\Command\RecommendCommand">
+        <arguments>
+            <argument name="engine" xsi:type="object">Panth\AiVisibility\Api\RecommendationEngineInterface\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Panth\AiVisibility\Console\Command\VerifyCommand">
+        <arguments>
+            <argument name="calculator" xsi:type="object">Panth\AiVisibility\Api\ImpactCalculatorInterface\Proxy</argument>
+            <argument name="config" xsi:type="object">Panth\AiVisibility\Model\Config\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Panth\AiVisibility\Console\Command\EmailCommand">
+        <arguments>
+            <argument name="sender" xsi:type="object">Panth\AiVisibility\Service\Email\WeeklySummarySender\Proxy</argument>
+        </arguments>
+    </type>
+
+    <!--
+        Admin listing (Crawler Log). Plain table collection without
+        a resource model: SearchResult reads mainTable through ResourceConnection
+        and uses identifierName as the row id.
+    -->
+    <virtualType name="PanthAivHitGridCollection" type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">panth_aiv_hit</argument>
+            <argument name="identifierName" xsi:type="string">hit_id</argument>
+        </arguments>
+    </virtualType>
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="panth_aivisibility_hit_listing_data_source" xsi:type="string">PanthAivHitGridCollection</item>
+            </argument>
+        </arguments>
+    </type>
+</config>

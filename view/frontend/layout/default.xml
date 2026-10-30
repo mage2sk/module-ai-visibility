@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * AI visit snippet at the end of every storefront page (Hyva and Luma).
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="before.body.end">
+            <block class="Panth\AiVisibility\Block\Collector"
+                   name="panth.aivisibility.collector"
+                   template="Panth_AiVisibility::collector.phtml"/>
+        </referenceContainer>
+    </body>
+</page>

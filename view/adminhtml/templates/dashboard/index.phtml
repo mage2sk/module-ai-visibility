@@ -1,0 +1,278 @@
+<?php
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * AI Visibility dashboard. Chart markup comes from Service\Chart\SvgChart, which escapes every
+ * label itself; everything else is escaped here.
+ *
+ * @var \Panth\AiVisibility\Block\Adminhtml\Dashboard $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+$range = $block->getRange();
+$storeOptions = $block->getStoreOptions();
+$storeId = $block->getStoreId();
+$sim = $block->includeSimulated();
+$hasData = $block->hasAnyData();
+$candidates = $block->getNewCandidateCount();
+$periods = ['7' => __('Last 7 days'), '30' => __('Last 30 days'), '90' => __('Last 90 days'), 'custom' => __('Custom range')];
+?>
+<div class="panth-aiv">
+    <?php if ($sim): ?>
+        <div class="message message-notice panth-aiv__banner" role="status">
+            <?= $escaper->escapeHtml(__('Simulated test data is included in every figure on this page.')) ?>
+            <a href="<?= $escaper->escapeUrl($block->getDashboardUrl(['sim' => null])) ?>"><?= $escaper->escapeHtml(__('Hide simulated data')) ?></a>
+        </div>
+    <?php elseif ($block->hasSimulatedData()): ?>
+        <div class="message message-notice panth-aiv__banner" role="status">
+            <?= $escaper->escapeHtml(__('Simulated test rows exist for this period. They are not counted below.')) ?>
+            <a href="<?= $escaper->escapeUrl($block->getDashboardUrl(['sim' => 1])) ?>"><?= $escaper->escapeHtml(__('Show them')) ?></a>
+        </div>
+    <?php endif; ?>
+    <?php if ($range->wasAdjusted()): ?>
+        <div class="message message-warning panth-aiv__banner" role="status">
+            <?= $escaper->escapeHtml(__('The requested dates were corrected: ranges use valid UTC days, end today at the latest and cover at most %1 days.', \Panth\AiVisibility\Service\Report\DateRange::MAX_DAYS)) ?>
+        </div>
+    <?php endif; ?>
+
+    <form class="panth-aiv__filters" method="get" action="<?= $escaper->escapeUrl($block->getFilterUrl()) ?>">
+        <div class="panth-aiv__field">
+            <label for="panth-aiv-period"><?= $escaper->escapeHtml(__('Period')) ?></label>
+            <select id="panth-aiv-period" name="period" class="admin__control-select">
+                <?php foreach ($periods as $value => $label): ?>
+                    <option value="<?= $escaper->escapeHtmlAttr($value) ?>"<?= $range->period() === (string)$value ? ' selected' : '' ?>><?= $escaper->escapeHtml($label) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="panth-aiv__field">
+            <label for="panth-aiv-from"><?= $escaper->escapeHtml(__('From (custom)')) ?></label>
+            <input id="panth-aiv-from" class="admin__control-text" type="date" name="from"
+                   value="<?= $escaper->escapeHtmlAttr($range->from()) ?>"/>
+        </div>
+        <div class="panth-aiv__field">
+            <label for="panth-aiv-to"><?= $escaper->escapeHtml(__('To (custom)')) ?></label>
+            <input id="panth-aiv-to" class="admin__control-text" type="date" name="to"
+                   value="<?= $escaper->escapeHtmlAttr($range->to()) ?>"/>
+        </div>
+        <div class="panth-aiv__field">
+            <label for="panth-aiv-store"><?= $escaper->escapeHtml(__('Store view')) ?></label>
+            <select id="panth-aiv-store" name="store" class="admin__control-select">
+                <option value="0"><?= $escaper->escapeHtml(__('All store views')) ?></option>
+                <?php foreach ($storeOptions as $id => $label): ?>
+                    <option value="<?= (int)$id ?>"<?= $storeId === (int)$id ? ' selected' : '' ?>><?= $escaper->escapeHtml($label) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <?php if ($sim): ?>
+            <input type="hidden" name="sim" value="1"/>
+        <?php endif; ?>
+        <div class="panth-aiv__field panth-aiv__field--action">
+            <button type="submit" class="action-secondary"><?= $escaper->escapeHtml(__('Apply')) ?></button>
+        </div>
+        <p class="panth-aiv__range"><?= $escaper->escapeHtml($block->getRangeLabel()) ?></p>
+    </form>
+
+    <?php if (!$hasData): ?>
+        <div class="panth-aiv__status">
+            <div class="panth-aiv__health"><?= $block->getChildHtml('health_card') ?></div>
+            <div class="panth-aiv__card panth-aiv__discovery">
+                <h2 class="panth-aiv__h"><?= $escaper->escapeHtml(__('Discovery')) ?></h2>
+                <?php if ($candidates > 0): ?>
+                    <p><?= $escaper->escapeHtml(__('%1 unknown bots or AI sources are waiting for review.', $block->formatNumber($candidates))) ?></p>
+                <?php else: ?>
+                    <p><?= $escaper->escapeHtml(__('No unknown bots or AI sources are waiting for review.')) ?></p>
+                <?php endif; ?>
+                <a class="action-default" href="<?= $escaper->escapeUrl($block->getDiscoveryUrl()) ?>"><?= $escaper->escapeHtml(__('Open Discovery')) ?></a>
+            </div>
+        </div>
+        <?= $block->getChildHtml('loop_cards') ?>
+        <section class="panth-aiv__card panth-aiv__empty" aria-labelledby="panth-aiv-empty-title">
+            <h2 id="panth-aiv-empty-title" class="panth-aiv__h"><?= $escaper->escapeHtml(__('No AI traffic recorded yet')) ?></h2>
+            <p><?= $escaper->escapeHtml(__('That is normal right after installation. Figures appear here once AI bots or shoppers coming from AI assistants reach your store and the summary job has run.')) ?></p>
+            <ol>
+                <li><?= $escaper->escapeHtml(__('Check that the module and crawler / visit tracking are switched on in the configuration.')) ?>
+                    <a href="<?= $escaper->escapeUrl($block->getConfigUrl()) ?>"><?= $escaper->escapeHtml(__('Open configuration')) ?></a></li>
+                <li><?= $escaper->escapeHtml(__('Make sure Magento cron runs: the daily summaries are rebuilt every 30 minutes (or run bin/magento panth:aivisibility:rollup).')) ?></li>
+                <li><?= $escaper->escapeHtml(__('If Varnish or a CDN serves cached pages, bots never reach Magento: enable the access log import so their hits are counted.')) ?></li>
+                <li><?= $escaper->escapeHtml(__('To preview the dashboard on a test store, run bin/magento panth:aivisibility:simulate --days=30 and view it with simulated data shown.')) ?></li>
+            </ol>
+        </section>
+    <?php else: ?>
+        <?php $kpis = $block->getKpis(); ?>
+        <section class="panth-aiv__kpis" aria-label="<?= $escaper->escapeHtmlAttr(__('Key figures')) ?>">
+            <div class="panth-aiv__kpi">
+                <span class="panth-aiv__kpi-value"><?= $escaper->escapeHtml($block->formatNumber($kpis['hits'])) ?></span>
+                <span class="panth-aiv__kpi-label"><?= $escaper->escapeHtml(__('AI crawler hits')) ?></span>
+            </div>
+            <div class="panth-aiv__kpi">
+                <span class="panth-aiv__kpi-value"><?= $escaper->escapeHtml($block->formatNumber($kpis['live'])) ?></span>
+                <span class="panth-aiv__kpi-label"><?= $escaper->escapeHtml(__('Live-answer fetches')) ?></span>
+            </div>
+            <div class="panth-aiv__kpi">
+                <span class="panth-aiv__kpi-value"><?= $escaper->escapeHtml($block->formatNumber($kpis['visits'])) ?></span>
+                <span class="panth-aiv__kpi-label"><?= $escaper->escapeHtml(__('AI visits')) ?></span>
+            </div>
+            <div class="panth-aiv__kpi">
+                <span class="panth-aiv__kpi-value"><?= $escaper->escapeHtml($block->formatNumber($kpis['orders'])) ?></span>
+                <span class="panth-aiv__kpi-label"><?= $escaper->escapeHtml(__('AI orders')) ?></span>
+            </div>
+            <div class="panth-aiv__kpi">
+                <span class="panth-aiv__kpi-value"><?= $escaper->escapeHtml($block->formatMoney($kpis['revenue'])) ?></span>
+                <span class="panth-aiv__kpi-label"><?= $escaper->escapeHtml(__('AI revenue, %1 conversion', $block->formatPercent($kpis['conversion']))) ?></span>
+            </div>
+        </section>
+        <?php if ($block->hasMixedCurrencies()): ?>
+            <p class="panth-aiv__note"><?= $escaper->escapeHtml(__('Your store views use different base currencies. Pick one store view for exact revenue figures.')) ?></p>
+        <?php endif; ?>
+        <div class="panth-aiv__status">
+            <div class="panth-aiv__health"><?= $block->getChildHtml('health_card') ?></div>
+            <div class="panth-aiv__card panth-aiv__discovery">
+                <h2 class="panth-aiv__h"><?= $escaper->escapeHtml(__('Discovery')) ?></h2>
+                <?php if ($candidates > 0): ?>
+                    <p><?= $escaper->escapeHtml(__('%1 unknown bots or AI sources are waiting for review.', $block->formatNumber($candidates))) ?></p>
+                <?php else: ?>
+                    <p><?= $escaper->escapeHtml(__('No unknown bots or AI sources are waiting for review.')) ?></p>
+                <?php endif; ?>
+                <a class="action-default" href="<?= $escaper->escapeUrl($block->getDiscoveryUrl()) ?>"><?= $escaper->escapeHtml(__('Open Discovery')) ?></a>
+            </div>
+        </div>
+        <?= $block->getChildHtml('loop_cards') ?>
+
+        <?php $insights = $block->getInsights(); ?>
+        <?php if ($insights): ?>
+            <section class="panth-aiv__card" aria-labelledby="panth-aiv-insights-title">
+                <h2 id="panth-aiv-insights-title" class="panth-aiv__h"><?= $escaper->escapeHtml(__('Insights')) ?></h2>
+                <ul class="panth-aiv__insights">
+                    <?php foreach ($insights as $insight): ?>
+                        <?php $levelLabel = ['warning' => __('Warning'), 'info' => __('Info'), 'ok' => __('Good')][$insight['level']] ?? __('Info'); ?>
+                        <li class="panth-aiv__insight panth-aiv__insight--<?= $escaper->escapeHtmlAttr($insight['level']) ?>">
+                            <span class="panth-aiv__pill"><?= $escaper->escapeHtml($levelLabel) ?></span>
+                            <strong><?= $escaper->escapeHtml($insight['title']) ?></strong>
+                            <span><?= $escaper->escapeHtml($insight['text']) ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </section>
+        <?php endif; ?>
+
+        <?php $hitsChart = $block->getHitsChart(); ?>
+        <section class="panth-aiv__card" aria-labelledby="panth-aiv-hits-title">
+            <h2 id="panth-aiv-hits-title" class="panth-aiv__h"><?= $escaper->escapeHtml(__('AI crawler hits per day')) ?></h2>
+            <?php if ($hitsChart['empty']): ?>
+                <p class="panth-aiv__muted"><?= $escaper->escapeHtml(__('No AI crawler hits in this period. Try a longer period, or check the Health card if you expected traffic.')) ?></p>
+            <?php else: ?>
+                <?php if (count($hitsChart['legend']) > 1): ?>
+                    <ul class="panth-aiv__legend">
+                        <?php foreach ($hitsChart['legend'] as $item): ?>
+                            <li><svg class="panth-aiv__swatch" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><rect width="12" height="12" rx="3" fill="<?= $escaper->escapeHtmlAttr($item['color']) ?>"/></svg><?= $escaper->escapeHtml($item['name']) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+                <?= /* @noEscape */ $hitsChart['svg'] ?>
+            <?php endif; ?>
+        </section>
+
+        <div class="panth-aiv__grid">
+            <?php foreach ([[__('AI visits per day'), $block->getVisitsChart(), __('No AI visits in this period. Visits are counted when a shopper arrives from an AI assistant (referrer or utm_source).')], [__('AI orders per day'), $block->getOrdersChart(), __('No orders from AI visits in this period. An order counts when the shopper arrived from an AI assistant within the attribution window.')]] as $i => [$chartTitle, $chart, $emptyText]): ?>
+                <section class="panth-aiv__card" aria-labelledby="panth-aiv-chart-title-<?= (int)$i ?>">
+                    <h2 id="panth-aiv-chart-title-<?= (int)$i ?>" class="panth-aiv__h"><?= $escaper->escapeHtml($chartTitle) ?></h2>
+                    <?php if ($chart['empty']): ?>
+                        <p class="panth-aiv__muted"><?= $escaper->escapeHtml($emptyText) ?></p>
+                    <?php else: ?>
+                        <?= /* @noEscape */ $chart['svg'] ?>
+                    <?php endif; ?>
+                </section>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="panth-aiv__grid">
+            <?php foreach ([[__('Top pages fetched by AI bots'), $block->getTopPages(), __('No page data in this period yet.')], [__('Pages fetched for live answers'), $block->getLivePages(), __('No live-answer fetches in this period. These appear when an assistant opens one of your pages to answer a shopper.')]] as $i => [$tableTitle, $rows, $emptyText]): ?>
+                <section class="panth-aiv__card" aria-labelledby="panth-aiv-pages-title-<?= (int)$i ?>">
+                    <h2 id="panth-aiv-pages-title-<?= (int)$i ?>" class="panth-aiv__h"><?= $escaper->escapeHtml($tableTitle) ?></h2>
+                    <?php if (!$rows): ?>
+                        <p class="panth-aiv__muted"><?= $escaper->escapeHtml($emptyText) ?></p>
+                    <?php else: ?>
+                        <table class="data-grid panth-aiv__table">
+                            <thead><tr>
+                                <th class="data-grid-th" scope="col"><?= $escaper->escapeHtml(__('Page')) ?></th>
+                                <th class="data-grid-th" scope="col"><?= $escaper->escapeHtml(__('Type')) ?></th>
+                                <th class="data-grid-th panth-aiv__num" scope="col"><?= $escaper->escapeHtml(__('Hits')) ?></th>
+                            </tr></thead>
+                            <tbody>
+                            <?php foreach ($rows as $row): ?>
+                                <tr>
+                                    <td><span class="panth-aiv__label"><?= $escaper->escapeHtml($row['label']) ?></span>
+                                        <?php if ($row['label'] !== $row['path']): ?><span class="panth-aiv__path"><?= $escaper->escapeHtml($row['path']) ?></span><?php endif; ?></td>
+                                    <td><?= $escaper->escapeHtml($row['type']) ?></td>
+                                    <td class="panth-aiv__num"><?= $escaper->escapeHtml($block->formatNumber($row['hits'])) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
+                </section>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="panth-aiv__grid">
+            <?php $bots = $block->getBotRows(); ?>
+            <section class="panth-aiv__card" aria-labelledby="panth-aiv-bots-title">
+                <h2 id="panth-aiv-bots-title" class="panth-aiv__h"><?= $escaper->escapeHtml(__('AI bots by hits')) ?></h2>
+                <?php if (!$bots): ?>
+                    <p class="panth-aiv__muted"><?= $escaper->escapeHtml(__('No AI bot visited in this period.')) ?></p>
+                <?php else: ?>
+                    <table class="data-grid panth-aiv__table">
+                        <thead><tr>
+                            <th class="data-grid-th" scope="col"><?= $escaper->escapeHtml(__('Bot')) ?></th>
+                            <th class="data-grid-th" scope="col"><?= $escaper->escapeHtml(__('Type')) ?></th>
+                            <th class="data-grid-th panth-aiv__num" scope="col"><?= $escaper->escapeHtml(__('Hits')) ?></th>
+                            <th class="data-grid-th panth-aiv__num" scope="col"><?= $escaper->escapeHtml(__('4xx')) ?></th>
+                            <th class="data-grid-th panth-aiv__num" scope="col"><?= $escaper->escapeHtml(__('5xx')) ?></th>
+                            <th class="data-grid-th panth-aiv__num" scope="col"><?= $escaper->escapeHtml(__('Avg ms')) ?></th>
+                        </tr></thead>
+                        <tbody>
+                        <?php foreach ($bots as $row): ?>
+                            <tr>
+                                <td><span class="panth-aiv__label"><?= $escaper->escapeHtml($row['name']) ?></span>
+                                    <?php if ($row['company'] !== $row['name']): ?><span class="panth-aiv__path"><?= $escaper->escapeHtml($row['company']) ?></span><?php endif; ?></td>
+                                <td><?= $escaper->escapeHtml($row['category']) ?></td>
+                                <td class="panth-aiv__num"><?= $escaper->escapeHtml($block->formatNumber($row['hits'])) ?></td>
+                                <td class="panth-aiv__num"><?= $escaper->escapeHtml($block->formatPercent($row['share4xx'])) ?></td>
+                                <td class="panth-aiv__num<?= $row['share5xx'] > 0.01 ? ' panth-aiv__bad' : '' ?>"><?= $escaper->escapeHtml($block->formatPercent($row['share5xx'])) ?></td>
+                                <td class="panth-aiv__num"><?= $escaper->escapeHtml($block->formatNumber($row['avg_ms'])) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <p class="panth-aiv__muted"><a href="<?= $escaper->escapeUrl($block->getLogUrl()) ?>"><?= $escaper->escapeHtml(__('Open the Crawler Log for single requests')) ?></a></p>
+                <?php endif; ?>
+            </section>
+
+            <?php $revenue = $block->getRevenueBySource(); ?>
+            <section class="panth-aiv__card" aria-labelledby="panth-aiv-revenue-title">
+                <h2 id="panth-aiv-revenue-title" class="panth-aiv__h"><?= $escaper->escapeHtml(__('Revenue by AI source')) ?></h2>
+                <?php if (!$revenue): ?>
+                    <p class="panth-aiv__muted"><?= $escaper->escapeHtml(__('No attributed orders in this period. Canceled orders are not counted.')) ?></p>
+                <?php else: ?>
+                    <table class="data-grid panth-aiv__table">
+                        <thead><tr>
+                            <th class="data-grid-th" scope="col"><?= $escaper->escapeHtml(__('Source')) ?></th>
+                            <th class="data-grid-th panth-aiv__num" scope="col"><?= $escaper->escapeHtml(__('Orders')) ?></th>
+                            <th class="data-grid-th panth-aiv__num" scope="col"><?= $escaper->escapeHtml(__('Revenue')) ?></th>
+                        </tr></thead>
+                        <tbody>
+                        <?php foreach ($revenue as $row): ?>
+                            <tr>
+                                <td><?= $escaper->escapeHtml($row['name']) ?></td>
+                                <td class="panth-aiv__num"><?= $escaper->escapeHtml($block->formatNumber($row['orders'])) ?></td>
+                                <td class="panth-aiv__num"><?= $escaper->escapeHtml($block->formatMoney($row['revenue'])) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <p class="panth-aiv__muted"><?= $escaper->escapeHtml(__('Credited to the %1, by order date. Canceled orders are not counted.', $block->getAttributionModelLabel())) ?></p>
+                <?php endif; ?>
+            </section>
+        </div>
+        <p class="panth-aiv__note"><?= $escaper->escapeHtml(__('Crawler and visit figures come from daily summaries rebuilt every 30 minutes; days are UTC days.')) ?></p>
+    <?php endif; ?>
+</div>

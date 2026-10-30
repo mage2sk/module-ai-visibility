@@ -1,0 +1,16 @@
+<?php
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * Inert JSON config (a data block, not executed, so outside CSP script rules) plus the
+ * inline snippet rendered through SecureHtmlRenderer so Magento CSP registers its hash / nonce.
+ *
+ * The element id must match Collector::CONFIG_ELEMENT_ID.
+ *
+ * @var \Panth\AiVisibility\Block\Collector $block
+ */
+?>
+<?php if ($block->isEnabled()): ?>
+    <script type="application/json" id="panth-aiv-cfg"><?= /* @noEscape */ $block->getConfigJson() ?></script>
+    <?= /* @noEscape */ $block->renderScript() ?>
+<?php endif; ?>

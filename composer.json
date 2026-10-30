@@ -1,0 +1,54 @@
+{
+    "name": "mage2kishan/module-ai-visibility",
+    "description": "Panth AI Visibility - analytics for Magento 2 that counts AI crawler requests (including full page cache hits), detects shoppers arriving from AI assistants and attributes their orders, with an admin dashboard and insights, discovery of unknown bots, data-health checks and an access log importer for Varnish and CDN stores.",
+    "type": "magento2-module",
+    "version": "1.1.0",
+    "license": "MIT",
+    "keywords": [
+        "magento2",
+        "magento2-module",
+        "panth",
+        "ai",
+        "ai-crawlers",
+        "ai-referrals",
+        "llm",
+        "attribution",
+        "analytics",
+        "seo"
+    ],
+    "homepage": "https://kishansavaliya.com",
+    "support": {
+        "email": "kishansavaliyakb@gmail.com",
+        "source": "https://kishansavaliya.com"
+    },
+    "authors": [
+        {
+            "name": "Kishan Savaliya",
+            "email": "kishansavaliyakb@gmail.com",
+            "homepage": "https://kishansavaliya.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "~8.1.0||~8.2.0||~8.3.0||~8.4.0||~8.5.0",
+        "magento/framework": "^103.0",
+        "magento/module-backend": "^102.0",
+        "magento/module-config": "^101.2",
+        "magento/module-store": "^101.1",
+        "magento/module-cron": "^100.4",
+        "magento/module-ui": "^101.2",
+        "magento/module-sales": "^103.0",
+        "magento/module-cookie": "^100.4",
+        "magento/module-page-cache": "^100.4",
+        "magento/module-email": "^101.1",
+        "mage2kishan/module-core": "*"
+    },
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Panth\\AiVisibility\\": ""
+        }
+    }
+}

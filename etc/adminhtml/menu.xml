@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Panth_AiVisibility::aivisibility"
+             title="AI Visibility"
+             translate="title"
+             module="Panth_AiVisibility"
+             sortOrder="97"
+             parent="Panth_Core::panth_extensions"
+             resource="Panth_AiVisibility::aivisibility"/>
+        <add id="Panth_AiVisibility::menu_dashboard"
+             title="Dashboard"
+             translate="title"
+             module="Panth_AiVisibility"
+             sortOrder="10"
+             parent="Panth_AiVisibility::aivisibility"
+             action="panth_aivisibility/dashboard/index"
+             resource="Panth_AiVisibility::dashboard"/>
+        <add id="Panth_AiVisibility::menu_recommendations"
+             title="Recommendations"
+             translate="title"
+             module="Panth_AiVisibility"
+             sortOrder="15"
+             parent="Panth_AiVisibility::aivisibility"
+             action="panth_aivisibility/recommendation/index"
+             resource="Panth_AiVisibility::recommendations"/>
+        <add id="Panth_AiVisibility::menu_log"
+             title="Crawler Log"
+             translate="title"
+             module="Panth_AiVisibility"
+             sortOrder="20"
+             parent="Panth_AiVisibility::aivisibility"
+             action="panth_aivisibility/log/index"
+             resource="Panth_AiVisibility::log"/>
+        <add id="Panth_AiVisibility::menu_discovery"
+             title="Discovery"
+             translate="title"
+             module="Panth_AiVisibility"
+             sortOrder="30"
+             parent="Panth_AiVisibility::aivisibility"
+             action="panth_aivisibility/discovery/index"
+             resource="Panth_AiVisibility::discovery"/>
+        <add id="Panth_AiVisibility::menu_config"
+             title="Configuration"
+             translate="title"
+             module="Panth_AiVisibility"
+             sortOrder="40"
+             parent="Panth_AiVisibility::aivisibility"
+             action="adminhtml/system_config/edit/section/panth_aivisibility"
+             resource="Panth_AiVisibility::config"/>
+    </menu>
+</config>

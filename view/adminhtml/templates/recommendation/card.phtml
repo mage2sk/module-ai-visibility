@@ -1,0 +1,36 @@
+<?php
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * "Top recommendations" dashboard card.
+ *
+ * @var \Panth\AiVisibility\Block\Adminhtml\RecommendationsCard $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+$presenter = $block->getPresenter();
+$top = $block->getTopRecommendations();
+$openCount = $block->getOpenCount();
+?>
+<section class="panth-aiv__card panth-aiv-rec-card" aria-labelledby="panth-aiv-rec-card-title">
+    <h2 id="panth-aiv-rec-card-title" class="panth-aiv__h"><?= $escaper->escapeHtml(__('Top recommendations')) ?></h2>
+    <?php if ($top === []): ?>
+        <p class="panth-aiv__muted"><?= $escaper->escapeHtml(__('No open recommendations right now.')) ?></p>
+    <?php else: ?>
+        <ol class="panth-aiv-rec-card__list">
+            <?php foreach ($top as $rec): ?>
+                <li>
+                    <a class="panth-aiv__label" href="<?= $escaper->escapeUrl($block->getPageUrl((int)$rec['rec_id'])) ?>"><?= $escaper->escapeHtml((string)$rec['title']) ?></a>
+                    <span class="panth-aiv__path"><?= $escaper->escapeHtml(__(
+                        '%1 · impact %2 of 100 · %3 affected',
+                        $presenter->ruleLabel((string)($rec['rule_code'] ?? '')),
+                        max(0, min(100, (int)($rec['impact_score'] ?? 0))),
+                        number_format((int)($rec['affected_count'] ?? 0))
+                    )) ?></span>
+                </li>
+            <?php endforeach; ?>
+        </ol>
+    <?php endif; ?>
+    <a class="action-default" href="<?= $escaper->escapeUrl($block->getPageUrl()) ?>"><?= $escaper->escapeHtml(
+        $openCount > 0 ? __('Open Recommendations (%1 open)', $openCount) : __('Open Recommendations')
+    ) ?></a>
+</section>

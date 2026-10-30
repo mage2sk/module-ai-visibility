@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * Saving the AI Visibility configuration clears the cached Discovery rules.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="admin_system_config_changed_section_panth_aivisibility">
+        <observer name="panth_aiv_clean_rule_cache" instance="Panth\AiVisibility\Observer\CleanRuleCache"/>
+    </event>
+</config>

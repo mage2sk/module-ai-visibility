@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * Weekly summary email (cron panth_aiv_weekly_email, bin/magento panth:aivisibility:email).
+ * Sent with the store email identity chosen in panth_aivisibility/email/sender.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Email:etc/email_templates.xsd">
+    <template id="panth_aivisibility_weekly_summary"
+              label="Panth AI Visibility: Weekly Summary"
+              file="weekly_summary.html"
+              type="html"
+              module="Panth_AiVisibility"
+              area="frontend"/>
+</config>

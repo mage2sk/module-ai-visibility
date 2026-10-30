@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * Safe defaults: crawler and visit tracking are on, discovery is on,
+ * access log import is off until an admin lists the log files.
+ * Recommendations and fix verification are on (they only read store data
+ * and write their own tables); the weekly summary email is off until an
+ * admin switches it on and enters recipients.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <panth_aivisibility>
+            <general>
+                <enabled>1</enabled>
+                <track_crawlers>1</track_crawlers>
+                <track_visits>1</track_visits>
+                <attribution_window_days>30</attribution_window_days>
+                <attribution_model>first</attribution_model>
+            </general>
+            <bots>
+                <discovery_enabled>1</discovery_enabled>
+                <custom_patterns></custom_patterns>
+                <raw_daily_cap>200000</raw_daily_cap>
+            </bots>
+            <sources>
+                <custom_hosts></custom_hosts>
+                <custom_utm></custom_utm>
+            </sources>
+            <collector>
+                <rate_limit_per_minute>20</rate_limit_per_minute>
+                <landing_sample_rate>25</landing_sample_rate>
+            </collector>
+            <privacy>
+                <respect_cookie_consent>1</respect_cookie_consent>
+                <hit_retention_days>14</hit_retention_days>
+                <raw_visit_retention_days>30</raw_visit_retention_days>
+                <landing_retention_days>30</landing_retention_days>
+                <daily_retention_months>13</daily_retention_months>
+            </privacy>
+            <log_import>
+                <enabled>0</enabled>
+                <files></files>
+                <max_lines_per_run>200000</max_lines_per_run>
+            </log_import>
+            <recommendations>
+                <enabled>1</enabled>
+                <min_volume>20</min_volume>
+                <max_open>50</max_open>
+            </recommendations>
+            <verify>
+                <window_days>14</window_days>
+                <min_events>30</min_events>
+                <max_controls>50</max_controls>
+            </verify>
+            <email>
+                <enabled>0</enabled>
+                <recipients></recipients>
+                <sender>general</sender>
+                <weekday>1</weekday>
+                <hour>7</hour>
+            </email>
+        </panth_aivisibility>
+    </default>
+</config>

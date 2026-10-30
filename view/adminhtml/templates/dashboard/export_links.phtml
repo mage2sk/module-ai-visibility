@@ -1,0 +1,31 @@
+<?php
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ */
+declare(strict_types=1);
+
+/**
+ * CSV export links for the dashboard reports (same filters as the dashboard).
+ */
+/** @var \Panth\AiVisibility\Block\Adminhtml\ExportLinks $block */
+/** @var \Magento\Framework\Escaper $escaper */
+?>
+<div class="panth-aiv panth-aiv__export">
+    <section class="panth-aiv__card">
+        <h2 class="panth-aiv__h"><?= $escaper->escapeHtml(__('Export to CSV')) ?></h2>
+        <p class="panth-aiv__muted">
+            <?= $escaper->escapeHtml(__('Downloads use the filters above: %1.', $block->getRangeLabel())) ?>
+            <?php if ($block->includesSimulated()): ?>
+                <?= $escaper->escapeHtml(__('Simulated rows are included.')) ?>
+            <?php endif; ?>
+        </p>
+        <p>
+            <?php foreach ($block->getLinks() as $link): ?>
+                <a class="action-secondary"
+                   href="<?= $escaper->escapeUrl($link['url']) ?>"
+                   data-report="<?= $escaper->escapeHtmlAttr($link['report']) ?>"
+                   download><?= $escaper->escapeHtml($link['label']) ?></a>
+            <?php endforeach; ?>
+        </p>
+    </section>
+</div>

@@ -1,0 +1,82 @@
+<!--
+/**
+ * Copyright © Panth Infotech. All rights reserved.
+ *
+ * AI Visibility weekly summary (template id panth_aivisibility_weekly_summary).
+ *
+ * site_name and period_label are plain text and printed with the var directive, which escapes them.
+ * The *_html variables are table fragments built by Panth\AiVisibility\Service\Email\WeeklySummaryFormatter,
+ * which escapes every stored value with the Magento escaper; they are printed with the raw filter so they are
+ * not escaped twice. The subject is a mail header (plain text, line breaks removed), not HTML, hence raw too.
+ * No images, no external resources, no tracking.
+ */
+-->
+<!--@subject {{var subject|raw}} @-->
+<!--@vars {
+"var subject":"Email Subject",
+"var site_name":"Store Name",
+"var period_label":"Period",
+"var metrics_html|raw":"Headline Numbers (HTML)",
+"var pages_html|raw":"Top Pages (HTML)",
+"var sources_html|raw":"Top Sources (HTML)",
+"var recommendations_html|raw":"Open Recommendations (HTML)",
+"var verdicts_html|raw":"Verdicts (HTML)",
+"var candidates_html|raw":"Discovery Candidates (HTML)",
+"var dashboard_link_html|raw":"Dashboard Link (HTML)"
+} @-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;background:#f1f5f9;">
+    <tr>
+        <td align="center" style="padding:24px 12px;">
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;max-width:600px;background:#ffffff;border:1px solid #e2e8f0;">
+                <tr>
+                    <td style="background:#0f172a;padding:24px 28px;">
+                        <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:bold;font-family:Arial,Helvetica,sans-serif;">{{trans "AI Visibility weekly summary"}}</h1>
+                        <p style="margin:6px 0 0;color:#cbd5e1;font-size:14px;font-family:Arial,Helvetica,sans-serif;">{{var site_name}}</p>
+                        <p style="margin:4px 0 0;color:#cbd5e1;font-size:12px;font-family:Arial,Helvetica,sans-serif;">{{var period_label}}</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:20px 28px 8px;">
+                        {{var metrics_html|raw}}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:16px 28px 8px;">
+                        <h2 style="margin:0 0 8px;font-size:16px;color:#0f172a;font-family:Arial,Helvetica,sans-serif;">{{trans "Top pages AI reads"}}</h2>
+                        {{var pages_html|raw}}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:16px 28px 8px;">
+                        <h2 style="margin:0 0 8px;font-size:16px;color:#0f172a;font-family:Arial,Helvetica,sans-serif;">{{trans "Top AI sources"}}</h2>
+                        {{var sources_html|raw}}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:16px 28px 8px;">
+                        <h2 style="margin:0 0 8px;font-size:16px;color:#0f172a;font-family:Arial,Helvetica,sans-serif;">{{trans "Top open recommendations"}}</h2>
+                        {{var recommendations_html|raw}}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:16px 28px 8px;">
+                        <h2 style="margin:0 0 8px;font-size:16px;color:#0f172a;font-family:Arial,Helvetica,sans-serif;">{{trans "Verdicts reached this week"}}</h2>
+                        {{var verdicts_html|raw}}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:16px 28px 8px;">
+                        <h2 style="margin:0 0 8px;font-size:16px;color:#0f172a;font-family:Arial,Helvetica,sans-serif;">{{trans "New discovery candidates"}}</h2>
+                        {{var candidates_html|raw}}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:16px 28px 24px;">
+                        {{var dashboard_link_html|raw}}
+                        <p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:#64748b;font-family:Arial,Helvetica,sans-serif;">{{trans "Real traffic only (simulated test data is left out). Days are UTC days. Verdicts are estimates with a likely range, not certainties. You receive this email because the weekly summary is switched on in the AI Visibility configuration (Weekly Summary Email)."}}</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
