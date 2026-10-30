@@ -2,8 +2,8 @@
     "name": "mage2kishan/module-ai-visibility",
     "description": "Panth AI Visibility - analytics for Magento 2 that counts AI crawler requests (including full page cache hits), detects shoppers arriving from AI assistants and attributes their orders, with an admin dashboard and insights, discovery of unknown bots, data-health checks and an access log importer for Varnish and CDN stores.",
     "type": "magento2-module",
-    "version": "1.0.0",
-    "license": "proprietary",
+    "version": "1.0.1",
+    "license": "MIT",
     "keywords": [
         "magento2",
         "magento2-module",
